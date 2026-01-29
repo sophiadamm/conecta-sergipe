@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/hooks/useAuth';
 import { validateCPF, formatCPF } from '@/lib/cpf';
@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Heart, Loader2, Building2, User } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { PREDEFINED_SKILLS } from '@/lib/skills';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -214,11 +216,10 @@ export default function Auth() {
                   >
                     <Label
                       htmlFor="voluntario"
-                      className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                        userType === 'voluntario'
+                      className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${userType === 'voluntario'
                           ? 'border-primary bg-primary/5'
                           : 'border-muted hover:border-primary/50'
-                      }`}
+                        }`}
                     >
                       <RadioGroupItem value="voluntario" id="voluntario" className="sr-only" />
                       <User className="h-8 w-8 mb-2 text-primary" />
@@ -227,11 +228,10 @@ export default function Auth() {
                     </Label>
                     <Label
                       htmlFor="ong"
-                      className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${
-                        userType === 'ong'
+                      className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${userType === 'ong'
                           ? 'border-secondary bg-secondary/5'
                           : 'border-muted hover:border-secondary/50'
-                      }`}
+                        }`}
                     >
                       <RadioGroupItem value="ong" id="ong" className="sr-only" />
                       <Building2 className="h-8 w-8 mb-2 text-secondary" />
@@ -338,14 +338,18 @@ export default function Auth() {
                   <Label htmlFor="skills">
                     {userType === 'ong' ? 'Áreas de atuação' : 'Habilidades'}
                   </Label>
-                  <Input
-                    id="skills"
-                    placeholder={
-                      userType === 'ong'
-                        ? 'Ex: educação, saúde, meio ambiente'
-                        : 'Ex: programação, design, ensino'
-                    }
-                    {...signupForm.register('skills')}
+                  <Controller
+                    name="skills"
+                    control={signupForm.control}
+                    render={({ field }) => (
+                      <MultiSelect
+                        options={Object.values(PREDEFINED_SKILLS)}
+                        selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                        onChange={(selected) => field.onChange(selected.join(','))}
+                        placeholder="Selecione as habilidades..."
+                        className="bg-background"
+                      />
+                    )}
                   />
                 </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
@@ -28,6 +28,8 @@ import {
   Briefcase,
   MessageSquare,
 } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { PREDEFINED_SKILLS } from '@/lib/skills';
 
 const opportunitySchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -531,10 +533,17 @@ export default function OngDashboard() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="skills_required">Habilidades desejadas</Label>
-                <Input
-                  id="skills_required"
-                  placeholder="Ex: informática, paciência"
-                  {...form.register('skills_required')}
+                <Controller
+                  name="skills_required"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MultiSelect
+                      options={Object.values(PREDEFINED_SKILLS)}
+                      selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                      onChange={(selected) => field.onChange(selected.join(','))}
+                      placeholder="Selecione as habilidades..."
+                    />
+                  )}
                 />
               </div>
               <div className="space-y-2">

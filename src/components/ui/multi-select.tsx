@@ -1,8 +1,9 @@
 import * as React from "react";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandGroup, CommandItem, CommandList, CommandEmpty } from "@/components/ui/command";
 import { Command as CommandPrimitive } from "cmdk";
+import { cn } from "@/lib/utils";
 
 type Option = {
     label: string;
@@ -54,7 +55,7 @@ export function MultiSelect({
             if (e.key === "Escape") {
                 inputRef.current?.blur();
             }
-        }} className="overflow-visible bg-transparent">
+        }} className={cn("overflow-visible bg-transparent", className)}>
             <div
                 className="group border border-input px-3 py-2 text-sm ring-offset-background rounded-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
             >
@@ -97,6 +98,9 @@ export function MultiSelect({
                 {open && selectables.length > 0 ? (
                     <div className="absolute w-full z-10 top-0 rounded-md border bg-popover text-popover-foreground shadow-md outline-none animate-in">
                         <CommandList>
+                            <CommandEmpty>Nenhuma habilidade encontrada.</CommandEmpty>
+                            {/* Empty state specifically for when search yields no results */}
+                            {/* Note: CommandEmpty only shows if the search term filters everything out */}
                             <CommandGroup className="h-full overflow-auto max-h-60">
                                 {selectables.map((skill) => {
                                     return (
@@ -105,7 +109,12 @@ export function MultiSelect({
                                             onSelect={() => {
                                                 handleSelect(skill);
                                                 // Keep input focused
-                                                inputRef.current?.focus();
+                                                // inputRef.current?.focus(); 
+                                                // No need to refocus if we prevent blur, but safe to keep
+                                            }}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
                                             }}
                                             className="cursor-pointer"
                                         >

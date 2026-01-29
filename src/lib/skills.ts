@@ -19,7 +19,16 @@ export const PREDEFINED_SKILLS = [
     "Psicologia",
     "Enfermagem",
     "Direito",
-    "Contabilidade"
+    "Contabilidade",
+    "Assistência Social",
+    "Meio Ambiente",
+    "Agricultura",
+    "Logística",
+    "Culinária",
+    "Artesanato",
+    "Nutrição",
+    "Comunicação",
+    "Saúde"
 ] as const;
 
 export type Skill = typeof PREDEFINED_SKILLS[number];

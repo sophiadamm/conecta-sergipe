@@ -11,35 +11,35 @@ const sampleNGOs = [
     password: 'teste123',
     nome: 'AJOSSE - Associação dos Jovens de Sergipe',
     bio: 'Promovemos educação e capacitação profissional para jovens em situação de vulnerabilidade social em Aracaju e interior de Sergipe.',
-    skills: 'educação, capacitação, juventude',
+    skills: 'Ensino, Comunicação',
   },
   {
     email: 'casadaacolhida@teste.com',
     password: 'teste123',
     nome: 'Casa da Acolhida',
     bio: 'Acolhemos pessoas em situação de rua, oferecendo alimentação, higiene e encaminhamento para reinserção social.',
-    skills: 'assistência social, acolhimento, alimentação',
+    skills: 'Assistência Social, Culinária, Saúde',
   },
   {
     email: 'projetosemente@teste.com',
     password: 'teste123',
     nome: 'Projeto Semente',
     bio: 'Trabalhamos com agricultura familiar e educação ambiental nas comunidades rurais do sertão sergipano.',
-    skills: 'meio ambiente, agricultura, sustentabilidade',
+    skills: 'Meio Ambiente, Agricultura',
   },
   {
     email: 'institutomangue@teste.com',
     password: 'teste123',
     nome: 'Instituto Mangue Vivo',
     bio: 'Preservação dos manguezais sergipanos através de educação ambiental e reflorestamento na região costeira.',
-    skills: 'meio ambiente, preservação, educação ambiental',
+    skills: 'Meio Ambiente, Ensino',
   },
   {
     email: 'redesolidaria@teste.com',
     password: 'teste123',
     nome: 'Rede Solidária Sergipe',
     bio: 'Conectamos doadores e instituições para distribuição de alimentos e itens básicos para famílias carentes.',
-    skills: 'doações, alimentação, logística',
+    skills: 'Logística, Culinária',
   },
 ];
 
@@ -50,7 +50,7 @@ const sampleVolunteers = [
     nome: 'Maria Silva Santos',
     cpf: '529.982.247-25', // Valid CPF
     bio: 'Professora aposentada com 30 anos de experiência em educação infantil. Quero continuar contribuindo com a educação de crianças.',
-    skills: 'educação, alfabetização, pedagogia, paciência',
+    skills: 'Ensino, Comunicação',
   },
   {
     email: 'joao.developer@teste.com',
@@ -58,7 +58,7 @@ const sampleVolunteers = [
     nome: 'João Pedro Almeida',
     cpf: '453.178.287-91', // Valid CPF
     bio: 'Desenvolvedor de software com experiência em Python e React. Quero usar minhas habilidades para ajudar ONGs com tecnologia.',
-    skills: 'programação, tecnologia, informática, design',
+    skills: 'JavaScript, React, Design',
   },
   {
     email: 'ana.nutricionista@teste.com',
@@ -66,7 +66,7 @@ const sampleVolunteers = [
     nome: 'Ana Carolina Menezes',
     cpf: '714.593.218-50', // Valid CPF
     bio: 'Nutricionista formada pela UFS, apaixonada por alimentação saudável e educação nutricional para comunidades.',
-    skills: 'nutrição, saúde, educação alimentar, culinária',
+    skills: 'Nutrição, Saúde, Culinária, Ensino',
   },
 ];
 
@@ -74,61 +74,61 @@ const sampleOpportunities = [
   {
     titulo: 'Professor de Informática Básica',
     descricao: 'Ensinar informática básica (Word, Excel, Internet) para jovens em capacitação profissional. Aulas duas vezes por semana no turno da tarde.',
-    skills_required: 'informática, ensino, paciência',
+    skills_required: 'Ensino, Comunicação',
     horas_estimadas: 20,
   },
   {
     titulo: 'Designer para Material de Divulgação',
     descricao: 'Criar materiais gráficos para campanhas de doação: cartazes, posts para redes sociais e folders.',
-    skills_required: 'design, criatividade, photoshop',
+    skills_required: 'Design, Marketing, Redes Sociais',
     horas_estimadas: 15,
   },
   {
     titulo: 'Voluntário para Distribuição de Alimentos',
     descricao: 'Ajudar na organização e distribuição de cestas básicas aos sábados pela manhã.',
-    skills_required: 'logística, organização, trabalho em equipe',
+    skills_required: 'Logística, Comunicação',
     horas_estimadas: 8,
   },
   {
     titulo: 'Educador Ambiental',
     descricao: 'Ministrar palestras e oficinas sobre preservação ambiental em escolas públicas de Aracaju.',
-    skills_required: 'meio ambiente, educação, comunicação',
+    skills_required: 'Meio Ambiente, Ensino, Comunicação',
     horas_estimadas: 12,
   },
   {
     titulo: 'Apoio Administrativo',
     descricao: 'Auxiliar nas atividades administrativas da ONG: organização de documentos, atendimento e planilhas.',
-    skills_required: 'administração, organização, excel',
+    skills_required: 'Gestão de Projetos, Contabilidade',
     horas_estimadas: 16,
   },
   {
     titulo: 'Contador Voluntário',
     descricao: 'Apoiar a ONG com questões contábeis, prestação de contas e orientação fiscal.',
-    skills_required: 'contabilidade, finanças, organização',
+    skills_required: 'Contabilidade, Gestão de Projetos',
     horas_estimadas: 10,
   },
   {
     titulo: 'Professor de Reforço Escolar',
     descricao: 'Dar aulas de reforço de matemática e português para crianças do ensino fundamental.',
-    skills_required: 'educação, matemática, português, paciência',
+    skills_required: 'Ensino, Comunicação',
     horas_estimadas: 12,
   },
   {
     titulo: 'Social Media',
     descricao: 'Gerenciar as redes sociais da ONG: criar conteúdo, responder comentários e aumentar engajamento.',
-    skills_required: 'marketing digital, redes sociais, criatividade',
+    skills_required: 'Marketing, Redes Sociais, Design',
     horas_estimadas: 8,
   },
   {
     titulo: 'Plantio de Mudas no Manguezal',
     descricao: 'Participar de mutirões de plantio de mudas para recuperação de áreas degradadas do manguezal.',
-    skills_required: 'meio ambiente, trabalho físico, disposição',
+    skills_required: 'Meio Ambiente, Agricultura',
     horas_estimadas: 6,
   },
   {
     titulo: 'Oficina de Artesanato',
     descricao: 'Ensinar técnicas de artesanato para mulheres em situação de vulnerabilidade como fonte de renda.',
-    skills_required: 'artesanato, criatividade, ensino',
+    skills_required: 'Artesanato, Ensino',
     horas_estimadas: 20,
   },
 ];
