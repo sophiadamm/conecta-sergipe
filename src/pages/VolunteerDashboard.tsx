@@ -87,9 +87,13 @@ export default function VolunteerDashboard() {
       const recs = getRecommendations(
         { bio: profile.bio, skills: profile.skills },
         formattedOpps,
-        5
+        50 // Get more candidates before filtering
       );
-      setRecommendations(recs);
+
+      // Filter by compatibility (>= 40%)
+      const filteredRecs = recs.filter(r => r.score >= 0.4);
+
+      setRecommendations(filteredRecs);
 
       // Load matches
       const { data: matchesData, error: matchError } = await supabase
@@ -179,7 +183,7 @@ export default function VolunteerDashboard() {
 
   const avgRating =
     matches.filter((m) => m.rating).reduce((sum, m) => sum + (m.rating || 0), 0) /
-      (matches.filter((m) => m.rating).length || 1) || 0;
+    (matches.filter((m) => m.rating).length || 1) || 0;
 
   const completedCount = matches.filter((m) => m.status === 'concluido').length;
 
@@ -202,7 +206,7 @@ export default function VolunteerDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="container py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">
@@ -298,9 +302,9 @@ export default function VolunteerDashboard() {
                             {opp.ong_nome}
                           </CardDescription>
                         </div>
-                        {opp.score > 0.3 && (
+                        {opp.score > 0 && (
                           <Badge variant="secondary" className="bg-primary/10 text-primary">
-                            {Math.round(opp.score * 100)}% match
+                            {Math.round(opp.score * 100)}% Match
                           </Badge>
                         )}
                       </div>

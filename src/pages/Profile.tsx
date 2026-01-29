@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { PREDEFINED_SKILLS } from '@/lib/skills';
 
 const profileSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
@@ -157,17 +159,20 @@ export default function Profile() {
                 <Label htmlFor="skills">
                   {profile.tipo === 'ong' ? 'Áreas de atuação' : 'Habilidades'}
                 </Label>
-                <Input
-                  id="skills"
-                  placeholder={
-                    profile.tipo === 'ong'
-                      ? 'Ex: educação, saúde, meio ambiente'
-                      : 'Ex: programação, design, ensino'
-                  }
-                  {...form.register('skills')}
+                <Controller
+                  name="skills"
+                  control={form.control}
+                  render={({ field }) => (
+                    <MultiSelect
+                      options={Object.values(PREDEFINED_SKILLS)}
+                      selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                      onChange={(selected) => field.onChange(selected.join(','))}
+                      placeholder="Selecione as habilidades..."
+                    />
+                  )}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Separe por vírgulas. Essas informações são usadas para encontrar matches!
+                  Selecione as habilidades que você possui ou busca.
                 </p>
               </div>
 
