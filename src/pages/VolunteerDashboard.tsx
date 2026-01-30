@@ -47,7 +47,7 @@ export default function VolunteerDashboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado'>('todos');
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado' | 'concluido'>('todos');
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.tipo !== 'voluntario')) {
@@ -273,9 +273,9 @@ export default function VolunteerDashboard() {
               <Heart className="h-4 w-4" />
               Minhas Candidaturas
             </TabsTrigger>
-            <TabsTrigger value="completed" className="gap-2">
-              <CheckCircle2 className="h-4 w-4" />
-              Concluídas
+            <TabsTrigger value="feedbacks" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Meus Feedbacks
             </TabsTrigger>
           </TabsList>
 
@@ -349,22 +349,22 @@ export default function VolunteerDashboard() {
               <button
                 onClick={() => setStatusFilter('todos')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'todos'
-                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
                   }`}
               >
                 <span>Todos</span>
                 <span className={`px-1.5 h-5 min-w-[1.25rem] flex items-center justify-center text-[10px] rounded-full ${statusFilter === 'todos' ? "bg-white/20" : "bg-muted-foreground/10"
                   }`}>
-                  {matches.filter(m => m.status !== 'concluido').length}
+                  {matches.length}
                 </span>
               </button>
 
               <button
                 onClick={() => setStatusFilter('pendente')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'pendente'
-                    ? "border-yellow-500 bg-yellow-500 text-white shadow-sm"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  ? "border-yellow-500 bg-yellow-500 text-white shadow-sm"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
                   }`}
               >
                 <span>Pendente</span>
@@ -377,8 +377,8 @@ export default function VolunteerDashboard() {
               <button
                 onClick={() => setStatusFilter('aprovado')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'aprovado'
-                    ? "border-green-600 bg-green-600 text-white shadow-sm"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  ? "border-green-600 bg-green-600 text-white shadow-sm"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
                   }`}
               >
                 <span>Selecionado</span>
@@ -391,8 +391,8 @@ export default function VolunteerDashboard() {
               <button
                 onClick={() => setStatusFilter('rejeitado')}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'rejeitado'
-                    ? "border-red-500 bg-red-500 text-white shadow-sm"
-                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  ? "border-red-500 bg-red-500 text-white shadow-sm"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
                   }`}
               >
                 <span>Não selecionado</span>
@@ -401,9 +401,22 @@ export default function VolunteerDashboard() {
                   {matches.filter(m => m.status === 'rejeitado').length}
                 </span>
               </button>
+              <button
+                onClick={() => setStatusFilter('concluido')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'concluido'
+                  ? "border-green-600 bg-green-600 text-white shadow-sm"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                <span>Concluídas</span>
+                <span className={`px-1.5 h-5 min-w-[1.25rem] flex items-center justify-center text-[10px] rounded-full ${statusFilter === 'concluido' ? "bg-white/20" : "bg-muted-foreground/10"
+                  }`}>
+                  {matches.filter(m => m.status === 'concluido').length}
+                </span>
+              </button>
             </div>
 
-            {matches.filter((m) => m.status !== 'concluido' && (statusFilter === 'todos' || m.status === statusFilter)).length === 0 ? (
+            {matches.filter((m) => statusFilter === 'todos' || m.status === statusFilter).length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
                   Nenhuma candidatura encontrada com esse filtro.
@@ -412,13 +425,13 @@ export default function VolunteerDashboard() {
             ) : (
               <div className="space-y-4">
                 {matches
-                  .filter((m) => m.status !== 'concluido' && (statusFilter === 'todos' || m.status === statusFilter))
+                  .filter((m) => statusFilter === 'todos' || m.status === statusFilter)
                   .map((match) => (
                     <Card key={match.id}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="text-lg">
+                            <CardTitle className="text-lg flex items-center gap-2">
                               {match.opportunity.titulo}
                             </CardTitle>
                             <CardDescription>
@@ -427,12 +440,13 @@ export default function VolunteerDashboard() {
                           </div>
                           <Badge
                             variant={
-                              match.status === 'aprovado' ? 'default' : 'secondary'
+                              match.status === 'aprovado' || match.status === 'concluido' ? 'default' : 'secondary'
                             }
                           >
                             {match.status === 'pendente' && 'Pendente'}
                             {match.status === 'aprovado' && 'Aprovado'}
                             {match.status === 'rejeitado' && 'Não selecionado'}
+                            {match.status === 'concluido' && 'Concluído'}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -447,55 +461,61 @@ export default function VolunteerDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="completed" className="space-y-4">
+          <TabsContent value="feedbacks" className="space-y-4">
             {matches.filter((m) => m.status === 'concluido').length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  Você ainda não tem trabalhos concluídos.
+                  Você ainda não possui avaliações de projetos concluídos.
                 </p>
               </Card>
             ) : (
-              <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {matches
                   .filter((m) => m.status === 'concluido')
                   .map((match) => (
-                    <Card key={match.id} className="border-success/20">
+                    <Card key={match.id}>
                       <CardHeader>
-                        <div className="flex items-start justify-between">
+                        <div className="flex justify-between items-start">
                           <div>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                              <CheckCircle2 className="h-5 w-5 text-success" />
-                              {match.opportunity.titulo}
-                            </CardTitle>
-                            <CardDescription>
-                              {match.opportunity.ong?.nome}
-                            </CardDescription>
+                            <CardTitle className="text-lg">{match.opportunity.ong?.nome}</CardTitle>
+                            <CardDescription className="mt-1">{match.opportunity.titulo}</CardDescription>
                           </div>
-                          <div className="text-right">
-                            <div className="font-bold text-primary">
-                              {match.horas_validadas}h
-                            </div>
-                            {match.rating && (
+                          {match.rating && (
+                            <div className="flex flex-col items-end">
                               <StarRating rating={match.rating} size="sm" />
-                            )}
-                          </div>
+                              <span className="text-xs text-muted-foreground mt-1">
+                                {match.rating}/5
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </CardHeader>
-                      {match.feedback_ong && (
-                        <CardContent>
-                          <div className="flex items-start gap-2 p-3 bg-muted rounded-lg">
-                            <MessageSquare className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                            <p className="text-sm italic">"{match.feedback_ong}"</p>
+                      <CardContent>
+                        {match.feedback_ong ? (
+                          <div className="bg-muted p-4 rounded-lg relative">
+                            <MessageSquare className="h-4 w-4 text-muted-foreground absolute top-4 left-3" />
+                            <p className="text-sm italic text-muted-foreground pl-5">
+                              "{match.feedback_ong}"
+                            </p>
                           </div>
-                        </CardContent>
-                      )}
+                        ) : (
+                          <p className="text-sm text-muted-foreground italic">
+                            Sem comentário em texto.
+                          </p>
+                        )}
+                        <div className="mt-4 pt-4 border-t flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4" />
+                          <span>{match.horas_validadas || 0} horas validadas</span>
+                        </div>
+                      </CardContent>
                     </Card>
                   ))}
               </div>
             )}
           </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+
+        </Tabs >
+      </main >
+    </div >
   );
 }
