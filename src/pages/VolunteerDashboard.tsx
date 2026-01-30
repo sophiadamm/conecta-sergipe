@@ -47,6 +47,7 @@ export default function VolunteerDashboard() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado'>('todos');
 
   useEffect(() => {
     if (!authLoading && (!profile || profile.tipo !== 'voluntario')) {
@@ -328,17 +329,11 @@ export default function VolunteerDashboard() {
                     <CardFooter>
                       <Button
                         className="w-full"
-                        onClick={() => handleApply(opp.id)}
-                        disabled={applyingTo === opp.id}
+                        onClick={() => navigate(`/vaga/${opp.id}`)}
+                        variant="secondary"
                       >
-                        {applyingTo === opp.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <>
-                            Candidatar-se
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
+                        Ver detalhes
+                        <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
@@ -348,16 +343,76 @@ export default function VolunteerDashboard() {
           </TabsContent>
 
           <TabsContent value="applications" className="space-y-4">
-            {matches.filter((m) => m.status !== 'concluido').length === 0 ? (
+
+            {/* Filter Chips */}
+            <div className="flex flex-wrap gap-2 mb-6">
+              <button
+                onClick={() => setStatusFilter('todos')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'todos'
+                    ? "border-primary bg-primary text-primary-foreground shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                <span>Todos</span>
+                <span className={`px-1.5 h-5 min-w-[1.25rem] flex items-center justify-center text-[10px] rounded-full ${statusFilter === 'todos' ? "bg-white/20" : "bg-muted-foreground/10"
+                  }`}>
+                  {matches.filter(m => m.status !== 'concluido').length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('pendente')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'pendente'
+                    ? "border-yellow-500 bg-yellow-500 text-white shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                <span>Pendente</span>
+                <span className={`px-1.5 h-5 min-w-[1.25rem] flex items-center justify-center text-[10px] rounded-full ${statusFilter === 'pendente' ? "bg-white/20" : "bg-muted-foreground/10"
+                  }`}>
+                  {matches.filter(m => m.status === 'pendente').length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('aprovado')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'aprovado'
+                    ? "border-green-600 bg-green-600 text-white shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                <span>Selecionado</span>
+                <span className={`px-1.5 h-5 min-w-[1.25rem] flex items-center justify-center text-[10px] rounded-full ${statusFilter === 'aprovado' ? "bg-white/20" : "bg-muted-foreground/10"
+                  }`}>
+                  {matches.filter(m => m.status === 'aprovado').length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter('rejeitado')}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${statusFilter === 'rejeitado'
+                    ? "border-red-500 bg-red-500 text-white shadow-sm"
+                    : "border-border bg-background text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                <span>Não selecionado</span>
+                <span className={`px-1.5 h-5 min-w-[1.25rem] flex items-center justify-center text-[10px] rounded-full ${statusFilter === 'rejeitado' ? "bg-white/20" : "bg-muted-foreground/10"
+                  }`}>
+                  {matches.filter(m => m.status === 'rejeitado').length}
+                </span>
+              </button>
+            </div>
+
+            {matches.filter((m) => m.status !== 'concluido' && (statusFilter === 'todos' || m.status === statusFilter)).length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  Você ainda não tem candidaturas. Explore as oportunidades recomendadas!
+                  Nenhuma candidatura encontrada com esse filtro.
                 </p>
               </Card>
             ) : (
               <div className="space-y-4">
                 {matches
-                  .filter((m) => m.status !== 'concluido')
+                  .filter((m) => m.status !== 'concluido' && (statusFilter === 'todos' || m.status === statusFilter))
                   .map((match) => (
                     <Card key={match.id}>
                       <CardHeader>
