@@ -70,7 +70,42 @@ export default function VolunteerDashboard() {
     if (!profile) return;
 
     try {
-      // Load opportunities for recommendations
+      // 1. Fetch matches first so we can filter recommendations
+      const { data: matchesData, error: matchError } = await supabase
+        .from('matches')
+        .select(`
+          id,
+          status,
+          horas_validadas,
+          feedback_ong,
+          rating,
+          opportunity_id,
+          opportunity:opportunities(
+            id,
+            titulo,
+            descricao,
+            horas_estimadas,
+            ong:profiles!opportunities_ong_id_fkey(nome)
+          )
+        `)
+        .eq('voluntario_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (matchError) throw matchError;
+
+      const processedMatches = (matchesData || []).map((m: any) => ({
+        ...m,
+        opportunity: {
+          ...m.opportunity,
+          ong: m.opportunity?.ong,
+        },
+      }));
+      setMatches(processedMatches);
+
+      // Create Set of ID's processedMatches
+      const appliedOpportunityIds = new Set(processedMatches.map((m: any) => m.opportunity_id || m.opportunity?.id));
+
+      // 2. Load opportunities for recommendations
       const { data: opportunities, error: oppError } = await supabase
         .from('opportunities')
         .select(`
@@ -97,40 +132,13 @@ export default function VolunteerDashboard() {
         50 // Get more candidates before filtering
       );
 
-      // Filter by compatibility (>= 40%)
-      const filteredRecs = recs.filter(r => r.score >= 0.4);
+      // Filter by compatibility (>= 40%) AND exclude applied opportunities
+      const filteredRecs = recs.filter(r =>
+        r.score >= 0.4 && !appliedOpportunityIds.has(r.id)
+      );
 
       setRecommendations(filteredRecs);
 
-      // Load matches
-      const { data: matchesData, error: matchError } = await supabase
-        .from('matches')
-        .select(`
-          id,
-          status,
-          horas_validadas,
-          feedback_ong,
-          rating,
-          opportunity:opportunities(
-            id,
-            titulo,
-            descricao,
-            horas_estimadas,
-            ong:profiles!opportunities_ong_id_fkey(nome)
-          )
-        `)
-        .eq('voluntario_id', profile.id)
-        .order('created_at', { ascending: false });
-
-      if (matchError) throw matchError;
-
-      setMatches((matchesData || []).map((m: any) => ({
-        ...m,
-        opportunity: {
-          ...m.opportunity,
-          ong: m.opportunity?.ong,
-        },
-      })));
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
