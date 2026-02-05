@@ -4,20 +4,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 export default function Dashboard() {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!loading) {
-      if (!profile) {
+      if (!user) {
         navigate('/auth');
-      } else if (profile.tipo === 'voluntario') {
-        navigate('/voluntario');
-      } else if (profile.tipo === 'ong') {
-        navigate('/ong');
+      } else if (profile) {
+        if (profile.tipo === 'voluntario') {
+          navigate('/voluntario');
+        } else if (profile.tipo === 'ong') {
+          navigate('/ong');
+        }
       }
     }
-  }, [profile, loading, navigate]);
+  }, [user, profile, loading, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

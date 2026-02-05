@@ -69,7 +69,7 @@ interface Match {
 }
 
 export default function OngDashboard() {
-  const { profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -90,15 +90,21 @@ export default function OngDashboard() {
   });
 
   useEffect(() => {
-    if (!authLoading && (!profile || profile.tipo !== 'ong')) {
-      navigate('/dashboard');
-      return;
+    if (!authLoading) {
+      if (!user) {
+        navigate('/dashboard');
+        return;
+      }
+      if (profile && profile.tipo !== 'ong') {
+        navigate('/dashboard');
+        return;
+      }
     }
 
     if (profile) {
       loadData();
     }
-  }, [profile, authLoading, navigate]);
+  }, [user, profile, authLoading, navigate]);
 
   const loadData = async () => {
     if (!profile) return;
