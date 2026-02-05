@@ -148,9 +148,23 @@ export default function Explore() {
 
                         {/* Opportunity Info */}
                         <Link to={`/vaga/${opportunity.id}`}>
-                          <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">
+                          <h3 className="font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                             {opportunity.titulo}
                           </h3>
+
+                          {opportunity.compatibilityScore > 0 && (
+                            <div className="flex flex-col gap-1 mb-3">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="bg-green-100 text-green-700 hover:bg-green-200 border-none px-2 py-0 h-5 text-[10px] font-bold uppercase tracking-wider">
+                                  {opportunity.compatibilityScore}% Match
+                                </Badge>
+                                <span className="text-[11px] text-muted-foreground font-medium">
+                                  {opportunity.matchExplanation}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
                           <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
                             {opportunity.descricao}
                           </p>

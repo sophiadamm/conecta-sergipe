@@ -1,11 +1,6 @@
 
 export const PREDEFINED_SKILLS = [
-    "JavaScript",
-    "React",
-    "TypeScript",
-    "Python",
-    "Java",
-    "HTML/CSS",
+    "Informática",
     "Design",
     "Marketing",
     "Vendas",
@@ -28,7 +23,11 @@ export const PREDEFINED_SKILLS = [
     "Artesanato",
     "Nutrição",
     "Comunicação",
-    "Saúde"
+    "Saúde",
+    "Cuidado com crianças",
+    "Cuidado com idosos",
+    "Cuidado com animais",
+    "Apoio a pessoas com deficiência",
 ] as const;
 
 export type Skill = typeof PREDEFINED_SKILLS[number];
