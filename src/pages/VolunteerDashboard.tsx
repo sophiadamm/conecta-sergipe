@@ -41,7 +41,7 @@ interface Match {
 }
 
 export default function VolunteerDashboard() {
-  const { profile, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [recommendations, setRecommendations] = useState<RecommendedOpportunity[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
@@ -50,15 +50,21 @@ export default function VolunteerDashboard() {
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado' | 'concluido'>('todos');
 
   useEffect(() => {
-    if (!authLoading && (!profile || profile.tipo !== 'voluntario')) {
-      navigate('/dashboard');
-      return;
+    if (!authLoading) {
+      if (!user) {
+        navigate('/dashboard');
+        return;
+      }
+      if (profile && profile.tipo !== 'voluntario') {
+        navigate('/dashboard');
+        return;
+      }
     }
 
     if (profile) {
       loadData();
     }
-  }, [profile, authLoading, navigate]);
+  }, [user, profile, authLoading, navigate]);
 
   const loadData = async () => {
     if (!profile) return;
