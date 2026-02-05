@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
@@ -6,16 +6,21 @@ import { Loader2 } from 'lucide-react';
 export default function Dashboard() {
   const { profile, loading } = useAuth();
   const navigate = useNavigate();
+  const hasNavigatedRef = useRef(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!profile) {
-        navigate('/auth');
-      } else if (profile.tipo === 'voluntario') {
-        navigate('/voluntario');
-      } else if (profile.tipo === 'ong') {
-        navigate('/ong');
-      }
+    // Prevent multiple navigations
+    if (loading || hasNavigatedRef.current) return;
+    
+    if (!profile) {
+      hasNavigatedRef.current = true;
+      navigate('/auth', { replace: true });
+    } else if (profile.tipo === 'voluntario') {
+      hasNavigatedRef.current = true;
+      navigate('/voluntario', { replace: true });
+    } else if (profile.tipo === 'ong') {
+      hasNavigatedRef.current = true;
+      navigate('/ong', { replace: true });
     }
   }, [profile, loading, navigate]);
 

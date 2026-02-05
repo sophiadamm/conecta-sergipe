@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -71,6 +71,7 @@ interface Match {
 export default function OngDashboard() {
   const { profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +79,7 @@ export default function OngDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewingMatch, setReviewingMatch] = useState<Match | null>(null);
   const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0 });
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const form = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
@@ -90,15 +92,25 @@ export default function OngDashboard() {
   });
 
   useEffect(() => {
-    if (!authLoading && (!profile || profile.tipo !== 'ong')) {
-      navigate('/dashboard');
+    // Prevent redirect loops
+    if (hasRedirected) return;
+    
+    if (!authLoading && !profile) {
+      setHasRedirected(true);
+      navigate('/auth', { replace: true });
+      return;
+    }
+    
+    if (!authLoading && profile && profile.tipo !== 'ong') {
+      setHasRedirected(true);
+      navigate('/dashboard', { replace: true });
       return;
     }
 
     if (profile) {
       loadData();
     }
-  }, [profile, authLoading, navigate]);
+  }, [profile, authLoading, navigate, hasRedirected]);
 
   const loadData = async () => {
     if (!profile) return;

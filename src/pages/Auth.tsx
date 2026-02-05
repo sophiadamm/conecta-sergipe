@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -50,10 +50,12 @@ type SignupFormData = z.infer<typeof signupSchema>;
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { user, signIn, signUp, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -77,10 +79,12 @@ export default function Auth() {
   const userType = signupForm.watch('tipo');
 
   useEffect(() => {
-    if (user && !authLoading) {
-      navigate('/dashboard');
+    // Only redirect if user is logged in, not loading, and hasn't already redirected
+    if (user && !authLoading && !hasRedirected) {
+      setHasRedirected(true);
+      navigate('/dashboard', { replace: true });
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, hasRedirected]);
 
   const handleLogin = async (data: LoginFormData) => {
     setError(null);

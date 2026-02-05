@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getRecommendations, RecommendedOpportunity } from '@/lib/recommendation';
@@ -43,22 +43,34 @@ interface Match {
 export default function VolunteerDashboard() {
   const { profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [recommendations, setRecommendations] = useState<RecommendedOpportunity[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado' | 'concluido'>('todos');
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && (!profile || profile.tipo !== 'voluntario')) {
-      navigate('/dashboard');
+    // Prevent redirect loops by checking if we've already redirected
+    if (hasRedirected) return;
+    
+    if (!authLoading && !profile) {
+      setHasRedirected(true);
+      navigate('/auth', { replace: true });
+      return;
+    }
+    
+    if (!authLoading && profile && profile.tipo !== 'voluntario') {
+      setHasRedirected(true);
+      navigate('/dashboard', { replace: true });
       return;
     }
 
     if (profile) {
       loadData();
     }
-  }, [profile, authLoading, navigate]);
+  }, [profile, authLoading, navigate, hasRedirected]);
 
   const loadData = async () => {
     if (!profile) return;
