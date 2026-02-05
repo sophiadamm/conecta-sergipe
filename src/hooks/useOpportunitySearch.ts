@@ -21,7 +21,7 @@ export interface SearchFilters {
 }
 
 const CATEGORIES = [
-  { value: '', label: 'Todas as categorias' },
+  { value: 'all', label: 'Todas as categorias' },
   { value: 'saúde', label: 'Saúde' },
   { value: 'tecnologia', label: 'Tecnologia' },
   { value: 'educação', label: 'Educação' },
@@ -65,7 +65,7 @@ export function useOpportunitySearch(filters: SearchFilters) {
       }
 
       // Apply category filter
-      if (filters.category) {
+      if (filters.category && filters.category !== 'all') {
         query = query.or(
           `skills_required.ilike.%${filters.category}%,descricao.ilike.%${filters.category}%`
         );

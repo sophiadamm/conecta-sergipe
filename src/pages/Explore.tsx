@@ -20,8 +20,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 export default function Explore() {
   const [searchInput, setSearchInput] = useState('');
-  const [category, setCategory] = useState('');
-  
+  const [category, setCategory] = useState('all');
+
   const debouncedQuery = useDebounce(searchInput, 300);
 
   const { data: opportunities, isLoading, error } = useOpportunitySearch({
