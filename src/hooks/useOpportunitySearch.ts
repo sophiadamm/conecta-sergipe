@@ -13,8 +13,6 @@ export interface SearchResult {
     nome: string;
     avatar_url: string | null;
   };
-  compatibilityScore: number;
-  matchExplanation: string;
 }
 
 export interface SearchFilters {
@@ -40,29 +38,43 @@ export function useOpportunitySearch(filters: SearchFilters) {
   return useQuery({
     queryKey: ['opportunities-search', filters],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_ranked_opportunities', {
-        p_query: filters.query.trim(),
-        p_category: filters.category
-      });
+      let query = supabase
+        .from('opportunities')
+        .select(`
+          id,
+          titulo,
+          descricao,
+          horas_estimadas,
+          skills_required,
+          created_at,
+          ong:profiles!opportunities_ong_id_fkey(
+            id,
+            nome,
+            avatar_url
+          )
+        `)
+        .eq('ativa', true)
+        .order('created_at', { ascending: false });
+
+      // Apply text search filter
+      if (filters.query.trim()) {
+        const searchTerm = `%${filters.query.trim()}%`;
+        query = query.or(
+          `titulo.ilike.${searchTerm},descricao.ilike.${searchTerm},skills_required.ilike.${searchTerm}`
+        );
+      }
+
+      // Apply category filter
+      if (filters.category && filters.category !== 'all') {
+        query = query.or(
+          `skills_required.ilike.%${filters.category}%,descricao.ilike.%${filters.category}%`
+        );
+      }
+
+      const { data, error } = await query.limit(50);
 
       if (error) throw error;
-
-      // Transformar o resultado flat do RPC no formato aninhado esperado pela UI
-      return (data as any[]).map(item => ({
-        id: item.id,
-        titulo: item.titulo,
-        descricao: item.descricao,
-        horas_estimadas: item.horas_estimadas,
-        skills_required: item.skills_required,
-        created_at: item.created_at,
-        compatibilityScore: item.compatibility_score,
-        matchExplanation: item.match_explanation,
-        ong: {
-          id: item.ong_id,
-          nome: item.ong_nome,
-          avatar_url: item.ong_avatar_url
-        }
-      })) as SearchResult[];
+      return data as unknown as SearchResult[];
     },
     staleTime: 1000 * 30, // 30 seconds
   });
