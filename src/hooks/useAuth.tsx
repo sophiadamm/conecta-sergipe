@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -31,15 +31,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const profileFetchedRef = useRef<string | null>(null);
-  const isMountedRef = useRef(true);
 
-  const fetchProfile = useCallback(async (userId: string): Promise<Profile | null> => {
-    // Prevent duplicate fetches for the same user
-    if (profileFetchedRef.current === userId) {
-      return profile;
-    }
-    
+  const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -51,60 +44,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    profileFetchedRef.current = userId;
     return data as Profile | null;
-  }, [profile]);
+  };
 
   useEffect(() => {
-    isMountedRef.current = true;
-    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        if (!isMountedRef.current) return;
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
         
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        // Only fetch profile on specific events to avoid redundant calls
-        if (newSession?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        // Defer profile fetch
+        if (session?.user) {
           setTimeout(() => {
-            if (!isMountedRef.current) return;
-            fetchProfile(newSession.user.id).then((p) => {
-              if (isMountedRef.current) setProfile(p);
-            });
+            fetchProfile(session.user.id).then(setProfile);
           }, 0);
-        } else if (event === 'SIGNED_OUT') {
+        } else {
           setProfile(null);
-          profileFetchedRef.current = null;
         }
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMountedRef.current) return;
-      
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
         fetchProfile(session.user.id).then((p) => {
-          if (isMountedRef.current) {
-            setProfile(p);
-            setLoading(false);
-          }
+          setProfile(p);
+          setLoading(false);
         });
       } else {
         setLoading(false);
       }
     });
 
-    return () => {
-      isMountedRef.current = false;
-      subscription.unsubscribe();
-    };
-  }, [fetchProfile]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signUp = async (
     email: string,
@@ -140,18 +117,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error: new Error(profileError.message) };
       }
 
-      // Mark as fetched and set profile directly (avoid redundant fetch)
-      profileFetchedRef.current = data.user.id;
-      setProfile({
-        id: '', // Will be updated on next fetch
-        user_id: data.user.id,
-        nome: profileData.nome || '',
-        cpf: profileData.cpf || null,
-        tipo: profileData.tipo || 'voluntario',
-        bio: profileData.bio || null,
-        skills: profileData.skills || null,
-        avatar_url: null,
-      });
+      // Fetch the created profile
+      const newProfile = await fetchProfile(data.user.id);
+      setProfile(newProfile);
     }
 
     return { error: null };
@@ -172,12 +140,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
-    profileFetchedRef.current = null;
   };
 
   const refreshProfile = async () => {
     if (user) {
-      profileFetchedRef.current = null; // Force refetch
       const p = await fetchProfile(user.id);
       setProfile(p);
     }
