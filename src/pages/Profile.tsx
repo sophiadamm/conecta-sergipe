@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,8 +13,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Linkedin, Github } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
 
@@ -23,6 +30,9 @@ const profileSchema = z.object({
   cpf: z.string().optional(),
   bio: z.string().optional(),
   skills: z.string().optional(),
+  linkedin_url: z.string().url('URL inválida').optional().or(z.literal('')),
+  github_url: z.string().url('URL inválida').optional().or(z.literal('')),
+  experience_level: z.string().optional(),
 }).refine((data) => {
   if (data.cpf) {
     return validateCPF(data.cpf);
@@ -43,12 +53,30 @@ export default function Profile() {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      nome: profile?.nome || '',
-      cpf: profile?.cpf || '',
-      bio: profile?.bio || '',
-      skills: profile?.skills || '',
+      nome: '',
+      cpf: '',
+      bio: '',
+      skills: '',
+      linkedin_url: '',
+      github_url: '',
+      experience_level: 'iniciante',
     },
   });
+
+  // Update form when profile loads
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        nome: profile.nome || '',
+        cpf: profile.cpf || '',
+        bio: profile.bio || '',
+        skills: profile.skills || '',
+        linkedin_url: profile.linkedin_url || '',
+        github_url: profile.github_url || '',
+        experience_level: profile.experience_level || 'iniciante',
+      });
+    }
+  }, [profile, form]);
 
   if (authLoading) {
     return (
@@ -82,6 +110,9 @@ export default function Profile() {
           cpf: data.cpf || null,
           bio: data.bio || null,
           skills: data.skills || null,
+          linkedin_url: data.linkedin_url || null,
+          github_url: data.github_url || null,
+          experience_level: data.experience_level || 'iniciante',
         })
         .eq('id', profile.id);
 
@@ -136,15 +167,37 @@ export default function Profile() {
               </div>
 
               {profile.tipo === 'voluntario' && (
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input id="cpf" {...form.register('cpf')} />
-                  {form.formState.errors.cpf && (
-                    <p className="text-sm text-destructive">
-                      {form.formState.errors.cpf.message}
-                    </p>
-                  )}
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input id="cpf" {...form.register('cpf')} />
+                    {form.formState.errors.cpf && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.cpf.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="experience_level">Nível de Experiência</Label>
+                    <Controller
+                      name="experience_level"
+                      control={form.control}
+                      render={({ field }) => (
+                        <Select value={field.value || 'iniciante'} onValueChange={field.onChange}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o nível" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="iniciante">Iniciante</SelectItem>
+                            <SelectItem value="junior">Júnior</SelectItem>
+                            <SelectItem value="senior">Sênior</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    />
+                  </div>
+                </>
               )}
 
               <div className="space-y-2">
@@ -183,6 +236,46 @@ export default function Profile() {
                   Selecione as habilidades que você possui ou busca.
                 </p>
               </div>
+
+              {profile.tipo === 'voluntario' && (
+                <div className="space-y-4 pt-4 border-t">
+                  <h3 className="font-medium">Links Sociais</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="linkedin_url" className="flex items-center gap-2">
+                      <Linkedin className="h-4 w-4" />
+                      LinkedIn
+                    </Label>
+                    <Input
+                      id="linkedin_url"
+                      placeholder="https://linkedin.com/in/seu-perfil"
+                      {...form.register('linkedin_url')}
+                    />
+                    {form.formState.errors.linkedin_url && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.linkedin_url.message}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="github_url" className="flex items-center gap-2">
+                      <Github className="h-4 w-4" />
+                      GitHub
+                    </Label>
+                    <Input
+                      id="github_url"
+                      placeholder="https://github.com/seu-usuario"
+                      {...form.register('github_url')}
+                    />
+                    {form.formState.errors.github_url && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.github_url.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? (

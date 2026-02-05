@@ -118,7 +118,10 @@ export type Database = {
           bio: string | null
           cpf: string | null
           created_at: string
+          experience_level: string | null
+          github_url: string | null
           id: string
+          linkedin_url: string | null
           nome: string
           skills: string | null
           tipo: Database["public"]["Enums"]["user_type"]
@@ -130,7 +133,10 @@ export type Database = {
           bio?: string | null
           cpf?: string | null
           created_at?: string
+          experience_level?: string | null
+          github_url?: string | null
           id?: string
+          linkedin_url?: string | null
           nome: string
           skills?: string | null
           tipo: Database["public"]["Enums"]["user_type"]
@@ -142,7 +148,10 @@ export type Database = {
           bio?: string | null
           cpf?: string | null
           created_at?: string
+          experience_level?: string | null
+          github_url?: string | null
           id?: string
+          linkedin_url?: string | null
           nome?: string
           skills?: string | null
           tipo?: Database["public"]["Enums"]["user_type"]

@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { DummyDataGenerator } from '@/components/DummyDataGenerator';
-import { Heart, LogOut, User, LayoutDashboard } from 'lucide-react';
+import { Heart, LogOut, User, LayoutDashboard, Search } from 'lucide-react';
 
 export function Header() {
   const { user, profile, signOut } = useAuth();
@@ -34,6 +34,12 @@ export function Header() {
         </Link>
 
         <nav className="flex items-center gap-4">
+          <Button variant="ghost" asChild className="hidden sm:flex">
+            <Link to="/explorar" className="gap-2">
+              <Search className="h-4 w-4" />
+              Explorar
+            </Link>
+          </Button>
           <DummyDataGenerator />
           
           {user && profile ? (
