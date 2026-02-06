@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -29,6 +30,9 @@ import {
   MessageSquare,
   Trash2,
   Pencil,
+  User,
+  Mail,
+  MapPin,
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
@@ -92,6 +96,9 @@ export default function OngDashboard() {
   const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0 });
   const [opportunityToDelete, setOpportunityToDelete] = useState<string | null>(null);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
+  const [selectedOpportunityFilter, setSelectedOpportunityFilter] = useState<string>('all');
+  const [selectedActiveOpportunityFilter, setSelectedActiveOpportunityFilter] = useState<string>('all');
+  const [viewingVolunteer, setViewingVolunteer] = useState<Match['voluntario'] | null>(null);
 
   const form = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
@@ -493,22 +500,54 @@ export default function OngDashboard() {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
-            {matches.filter((m) => m.status === 'pendente').length === 0 ? (
+            {/* Opportunity Filter */}
+            <div className="flex items-center gap-4 mb-4">
+              <Label htmlFor="opportunity-filter" className="text-sm font-medium">
+                Filtrar por oportunidade:
+              </Label>
+              <Select value={selectedOpportunityFilter} onValueChange={setSelectedOpportunityFilter}>
+                <SelectTrigger id="opportunity-filter" className="w-[300px]">
+                  <SelectValue placeholder="Todas as oportunidades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as oportunidades</SelectItem>
+                  {opportunities.map((opp) => (
+                    <SelectItem key={opp.id} value={opp.id}>
+                      {opp.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {matches.filter((m) =>
+              m.status === 'pendente' &&
+              (selectedOpportunityFilter === 'all' || m.opportunity?.id === selectedOpportunityFilter)
+            ).length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  Nenhuma candidatura pendente.
+                  {selectedOpportunityFilter === 'all'
+                    ? 'Nenhuma candidatura pendente.'
+                    : 'Nenhuma candidatura pendente para esta oportunidade.'}
                 </p>
               </Card>
             ) : (
               <div className="space-y-4">
                 {matches
-                  .filter((m) => m.status === 'pendente')
+                  .filter((m) =>
+                    m.status === 'pendente' &&
+                    (selectedOpportunityFilter === 'all' || m.opportunity?.id === selectedOpportunityFilter)
+                  )
                   .map((match) => (
                     <Card key={match.id}>
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle className="text-lg">
+                            <CardTitle
+                              className="text-lg cursor-pointer hover:text-primary transition-colors flex items-center gap-2 underline decoration-dotted"
+                              onClick={() => setViewingVolunteer(match.voluntario)}
+                            >
+                              <User className="h-4 w-4" />
                               {match.voluntario?.nome}
                             </CardTitle>
                             <CardDescription>
@@ -553,16 +592,44 @@ export default function OngDashboard() {
           </TabsContent>
 
           <TabsContent value="active" className="space-y-4">
-            {matches.filter((m) => m.status === 'aprovado').length === 0 ? (
+            {/* Opportunity Filter */}
+            <div className="flex items-center gap-4 mb-4">
+              <Label htmlFor="active-opportunity-filter" className="text-sm font-medium">
+                Filtrar por oportunidade:
+              </Label>
+              <Select value={selectedActiveOpportunityFilter} onValueChange={setSelectedActiveOpportunityFilter}>
+                <SelectTrigger id="active-opportunity-filter" className="w-[300px]">
+                  <SelectValue placeholder="Todas as oportunidades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as oportunidades</SelectItem>
+                  {opportunities.map((opp) => (
+                    <SelectItem key={opp.id} value={opp.id}>
+                      {opp.titulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {matches.filter((m) =>
+              m.status === 'aprovado' &&
+              (selectedActiveOpportunityFilter === 'all' || m.opportunity?.id === selectedActiveOpportunityFilter)
+            ).length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground">
-                  Nenhum trabalho em andamento.
+                  {selectedActiveOpportunityFilter === 'all'
+                    ? 'Nenhum trabalho em andamento.'
+                    : 'Nenhum trabalho em andamento para esta oportunidade.'}
                 </p>
               </Card>
             ) : (
               <div className="space-y-4">
                 {matches
-                  .filter((m) => m.status === 'aprovado')
+                  .filter((m) =>
+                    m.status === 'aprovado' &&
+                    (selectedActiveOpportunityFilter === 'all' || m.opportunity?.id === selectedActiveOpportunityFilter)
+                  )
                   .map((match) => (
                     <Card key={match.id}>
                       <CardHeader>
@@ -772,6 +839,57 @@ export default function OngDashboard() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Volunteer Profile Dialog */}
+      <Dialog open={!!viewingVolunteer} onOpenChange={() => setViewingVolunteer(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Perfil do Candidato
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="p-4 bg-muted rounded-lg">
+              <h3 className="font-semibold text-lg mb-1">{viewingVolunteer?.nome}</h3>
+              <p className="text-sm text-muted-foreground">ID: {viewingVolunteer?.id}</p>
+            </div>
+
+            {viewingVolunteer?.bio && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Sobre</Label>
+                <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                  {viewingVolunteer.bio}
+                </p>
+              </div>
+            )}
+
+            {viewingVolunteer?.skills && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Habilidades</Label>
+                <div className="flex flex-wrap gap-2">
+                  {viewingVolunteer.skills.split(',').map((skill, index) => (
+                    <Badge key={index} variant="secondary">
+                      {skill.trim()}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {!viewingVolunteer?.bio && !viewingVolunteer?.skills && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Este candidato ainda não completou seu perfil.
+              </p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewingVolunteer(null)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
