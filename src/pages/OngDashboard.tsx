@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -562,12 +562,14 @@ export default function OngDashboard() {
                       <CardHeader>
                         <div className="flex items-start justify-between">
                           <div>
-                            <CardTitle
-                              className="text-lg cursor-pointer hover:text-primary transition-colors flex items-center gap-2 underline decoration-dotted"
-                              onClick={() => setViewingVolunteer(match.voluntario)}
-                            >
+                            <CardTitle className="text-lg flex items-center gap-2">
                               <User className="h-4 w-4" />
-                              {match.voluntario?.nome}
+                              <Link
+                                to={`/perfil/${match.voluntario?.id}`}
+                                className="hover:text-primary transition-colors underline decoration-dotted underline-offset-2"
+                              >
+                                {match.voluntario?.nome}
+                              </Link>
                             </CardTitle>
                             <CardDescription>
                               Candidatura para: {match.opportunity?.titulo}
@@ -655,7 +657,12 @@ export default function OngDashboard() {
                         <div className="flex items-start justify-between">
                           <div>
                             <CardTitle className="text-lg">
-                              {match.voluntario?.nome}
+                              <Link
+                                to={`/perfil/${match.voluntario?.id}`}
+                                className="hover:text-primary transition-colors underline decoration-dotted underline-offset-2"
+                              >
+                                {match.voluntario?.nome}
+                              </Link>
                             </CardTitle>
                             <CardDescription>
                               {match.opportunity?.titulo} • {match.opportunity?.horas_estimadas}h estimadas

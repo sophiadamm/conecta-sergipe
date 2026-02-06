@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
-import { ProfileData, useVolunteerCompletedMatches } from '@/hooks/useProfile';
+import { ProfileData, useVolunteerCompletedMatches, useVolunteerReviews, calculateReviewStats } from '@/hooks/useProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { VolunteerReviewsSection } from './VolunteerReviewsSection';
 import { 
   User, 
   Star, 
@@ -28,14 +29,15 @@ const experienceLevelMap: Record<string, { label: string; color: string }> = {
 
 export function VolunteerProfile({ profile }: VolunteerProfileProps) {
   const { data: completedMatches, isLoading: loadingMatches } = useVolunteerCompletedMatches(profile.id);
+  const { data: reviews, isLoading: loadingReviews } = useVolunteerReviews(profile.id);
+  
+  const reviewStats = calculateReviewStats(reviews || []);
 
   const skillsList = profile.skills ? profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
   const experienceLevel = experienceLevelMap[profile.experience_level || 'iniciante'] || experienceLevelMap.iniciante;
 
   // Calculate total stats
   const totalHours = completedMatches?.reduce((sum, m) => sum + (m.horas_validadas || 0), 0) || 0;
-  const ratings = completedMatches?.filter(m => m.rating).map(m => m.rating!) || [];
-  const avgRating = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
 
   return (
     <div className="space-y-6">
@@ -105,11 +107,11 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
                 </div>
                 <p className="text-xs text-muted-foreground">Horas</p>
               </div>
-              {avgRating !== null && (
+              {reviewStats.avgRating > 0 && (
                 <div className="text-center p-3 bg-muted rounded-lg">
                   <div className="flex items-center justify-center gap-1 text-2xl font-bold text-warning">
                     <Star className="h-5 w-5 fill-warning" />
-                    {avgRating.toFixed(1)}
+                    {reviewStats.avgRating.toFixed(1)}
                   </div>
                   <p className="text-xs text-muted-foreground">Avaliação</p>
                 </div>
@@ -164,6 +166,13 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reviews Section */}
+      <VolunteerReviewsSection 
+        reviews={reviews || []} 
+        stats={reviewStats} 
+        isLoading={loadingReviews} 
+      />
 
       {/* Portfolio Section */}
       <Card>
