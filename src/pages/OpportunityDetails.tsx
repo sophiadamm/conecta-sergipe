@@ -146,10 +146,10 @@ export default function OpportunityDetails() {
                 <Button
                     variant="ghost"
                     className="mb-6"
-                    onClick={() => navigate('/voluntario')}
+                    onClick={() => navigate(-1)}
                 >
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar para Dashboard
+                    Voltar
                 </Button>
 
                 <div className="grid gap-6 md:grid-cols-3">
