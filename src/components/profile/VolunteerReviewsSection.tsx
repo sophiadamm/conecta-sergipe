@@ -70,9 +70,10 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
                     <span className="text-sm font-medium w-8 flex items-center gap-1">
                       {stars} <Star className="h-3 w-3 fill-warning text-warning" />
                     </span>
-                    <Progress 
-                      value={percentage} 
+                    <Progress
+                      value={percentage}
                       className="flex-1 h-2.5"
+                      indicatorClassName="bg-warning"
                     />
                     <span className="text-sm text-muted-foreground w-8 text-right">
                       {count}
@@ -88,7 +89,7 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
                 <MessageSquare className="h-4 w-4" />
                 Comentários das ONGs
               </h4>
-              
+
               {reviews.filter(r => r.comment).length > 0 ? (
                 reviews
                   .filter(r => r.comment)
@@ -110,7 +111,7 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
                         </Link>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
-                            <Link 
+                            <Link
                               to={`/perfil/${review.reviewer.id}`}
                               className="font-medium hover:text-primary transition-colors"
                             >
@@ -119,7 +120,7 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
                             <StarRating rating={review.rating} size="sm" />
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            {new Date(review.created_at).toLocaleDateString('pt-BR', {
+                            {review.opportunity_title} • {new Date(review.created_at).toLocaleDateString('pt-BR', {
                               day: 'numeric',
                               month: 'long',
                               year: 'numeric',

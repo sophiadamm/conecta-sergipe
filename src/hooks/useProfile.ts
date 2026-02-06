@@ -46,6 +46,7 @@ export interface ReviewData {
   rating: number;
   comment: string | null;
   created_at: string;
+  opportunity_title: string;
   reviewer: {
     id: string;
     nome: string;
@@ -64,7 +65,7 @@ export function useProfile(profileId: string | undefined) {
     queryKey: ['profile', profileId],
     queryFn: async () => {
       if (!profileId) throw new Error('Profile ID is required');
-      
+
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -73,7 +74,7 @@ export function useProfile(profileId: string | undefined) {
 
       if (error) throw error;
       if (!data) throw new Error('Profile not found');
-      
+
       return data as ProfileData;
     },
     enabled: !!profileId,
@@ -85,7 +86,7 @@ export function useOngOpportunities(ongId: string | undefined) {
     queryKey: ['ong-opportunities', ongId],
     queryFn: async () => {
       if (!ongId) return [];
-      
+
       const { data, error } = await supabase
         .from('opportunities')
         .select('*')
@@ -105,7 +106,7 @@ export function useVolunteerCompletedMatches(volunteerId: string | undefined) {
     queryKey: ['volunteer-completed-matches', volunteerId],
     queryFn: async () => {
       if (!volunteerId) return [];
-      
+
       const { data, error } = await supabase
         .from('matches')
         .select(`
@@ -137,25 +138,38 @@ export function useVolunteerReviews(volunteerId: string | undefined) {
     queryKey: ['volunteer-reviews', volunteerId],
     queryFn: async () => {
       if (!volunteerId) return [];
-      
+
       const { data, error } = await supabase
-        .from('reviews')
+        .from('matches')
         .select(`
           id,
           rating,
-          comment,
-          created_at,
-          reviewer:profiles!reviews_reviewer_id_fkey(
-            id,
-            nome,
-            avatar_url
+          feedback_ong,
+          updated_at,
+          opportunity:opportunities!inner(
+            titulo,
+            ong:profiles!opportunities_ong_id_fkey(
+              id,
+              nome,
+              avatar_url
+            )
           )
         `)
-        .eq('reviewed_id', volunteerId)
-        .order('created_at', { ascending: false });
+        .eq('voluntario_id', volunteerId)
+        .eq('status', 'concluido')
+        .not('rating', 'is', null)
+        .order('updated_at', { ascending: false });
 
       if (error) throw error;
-      return data as unknown as ReviewData[];
+
+      return (data as any[]).map(item => ({
+        id: item.id,
+        rating: item.rating,
+        comment: item.feedback_ong,
+        created_at: item.updated_at,
+        opportunity_title: item.opportunity.titulo,
+        reviewer: item.opportunity.ong
+      })) as ReviewData[];
     },
     enabled: !!volunteerId,
   });
