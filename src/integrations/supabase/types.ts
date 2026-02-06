@@ -75,6 +75,7 @@ export type Database = {
           descricao: string
           horas_estimadas: number
           id: string
+          location: string | null
           ong_id: string
           skills_required: string | null
           titulo: string
@@ -86,6 +87,7 @@ export type Database = {
           descricao: string
           horas_estimadas?: number
           id?: string
+          location?: string | null
           ong_id: string
           skills_required?: string | null
           titulo: string
@@ -97,6 +99,7 @@ export type Database = {
           descricao?: string
           horas_estimadas?: number
           id?: string
+          location?: string | null
           ong_id?: string
           skills_required?: string | null
           titulo?: string
@@ -122,6 +125,7 @@ export type Database = {
           github_url: string | null
           id: string
           linkedin_url: string | null
+          locations: string[] | null
           nome: string
           skills: string | null
           tipo: Database["public"]["Enums"]["user_type"]
@@ -137,6 +141,7 @@ export type Database = {
           github_url?: string | null
           id?: string
           linkedin_url?: string | null
+          locations?: string[] | null
           nome: string
           skills?: string | null
           tipo: Database["public"]["Enums"]["user_type"]
@@ -152,6 +157,7 @@ export type Database = {
           github_url?: string | null
           id?: string
           linkedin_url?: string | null
+          locations?: string[] | null
           nome?: string
           skills?: string | null
           tipo?: Database["public"]["Enums"]["user_type"]
