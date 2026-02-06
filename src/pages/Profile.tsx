@@ -24,12 +24,14 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, Save, Linkedin, Github } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import { SERGIPE_CITIES } from '@/lib/locations';
 
 const profileSchema = z.object({
   nome: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
   cpf: z.string().optional(),
   bio: z.string().optional(),
   skills: z.string().optional(),
+  locations: z.string().optional(),
   linkedin_url: z.string().url('URL inválida').optional().or(z.literal('')),
   github_url: z.string().url('URL inválida').optional().or(z.literal('')),
   experience_level: z.string().optional(),
@@ -57,6 +59,7 @@ export default function Profile() {
       cpf: '',
       bio: '',
       skills: '',
+      locations: '',
       linkedin_url: '',
       github_url: '',
       experience_level: 'iniciante',
@@ -71,6 +74,7 @@ export default function Profile() {
         cpf: profile.cpf || '',
         bio: profile.bio || '',
         skills: profile.skills || '',
+        locations: profile.locations ? profile.locations.join(',') : '',
         linkedin_url: profile.linkedin_url || '',
         github_url: profile.github_url || '',
         experience_level: profile.experience_level || 'iniciante',
@@ -110,6 +114,7 @@ export default function Profile() {
           cpf: data.cpf || null,
           bio: data.bio || null,
           skills: data.skills || null,
+          locations: data.locations ? data.locations.split(',').map(l => l.trim()).filter(Boolean) : null,
           linkedin_url: data.linkedin_url || null,
           github_url: data.github_url || null,
           experience_level: data.experience_level || 'iniciante',
@@ -238,9 +243,30 @@ export default function Profile() {
               </div>
 
               {profile.tipo === 'voluntario' && (
+                <div className="space-y-2">
+                  <Label htmlFor="locations">Onde você pode atuar?</Label>
+                  <Controller
+                    name="locations"
+                    control={form.control}
+                    render={({ field }) => (
+                      <MultiSelect
+                        options={SERGIPE_CITIES as unknown as string[]}
+                        selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                        onChange={(selected) => field.onChange(selected.join(','))}
+                        placeholder="Selecione as cidades..."
+                      />
+                    )}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Selecione as cidades de Sergipe onde você pode atuar como voluntário.
+                  </p>
+                </div>
+              )}
+
+              {profile.tipo === 'voluntario' && (
                 <div className="space-y-4 pt-4 border-t">
                   <h3 className="font-medium">Links Sociais</h3>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="linkedin_url" className="flex items-center gap-2">
                       <Linkedin className="h-4 w-4" />

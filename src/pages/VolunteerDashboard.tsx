@@ -114,6 +114,7 @@ export default function VolunteerDashboard() {
           descricao,
           skills_required,
           horas_estimadas,
+          location,
           ong:profiles!opportunities_ong_id_fkey(nome)
         `)
         .eq('ativa', true);
@@ -127,7 +128,7 @@ export default function VolunteerDashboard() {
       }));
 
       const recs = getRecommendations(
-        { bio: profile.bio, skills: profile.skills },
+        { bio: profile.bio, skills: profile.skills, locations: profile.locations },
         formattedOpps,
         50 // Get more candidates before filtering
       );

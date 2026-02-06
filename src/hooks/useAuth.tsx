@@ -14,6 +14,7 @@ interface Profile {
   linkedin_url: string | null;
   github_url: string | null;
   experience_level: string | null;
+  locations: string[] | null;
 }
 
 interface AuthContextType {
@@ -47,7 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
 
-    return data as Profile | null;
+    return data as unknown as Profile | null;
   };
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Defer profile fetch
         if (session?.user) {
           setTimeout(() => {
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
         fetchProfile(session.user.id).then((p) => {
           setProfile(p);

@@ -14,11 +14,13 @@ interface OpportunityData {
   skills_required: string | null;
   horas_estimadas: number;
   ong_nome?: string;
+  location?: string | null;
 }
 
 interface VolunteerData {
   bio: string | null;
   skills: string | null;
+  locations?: string[] | null;
 }
 
 export interface RecommendedOpportunity extends OpportunityData {
@@ -33,33 +35,40 @@ export function getRecommendations(
   if (opportunities.length === 0) return [];
 
   const volunteerSkills = new Set(normalize(volunteer.skills || ''));
+  const volunteerLocations = new Set(
+    (volunteer.locations || []).map(loc => loc.toLowerCase())
+  );
 
   const scored = opportunities.map(opp => {
-    // If opportunity has no skills required, it's a generic match (low but non-zero score?)
-    // Or maybe 0? Let's say 0.1 to show it if needed, or 0 if we really want strict matching.
-    // The requirement is "calculate percentage based on intersection".
-    // If skills_required is empty, we can't really match well.
-
+    // Calculate skills match score
     const oppSkills = normalize(opp.skills_required || '');
 
-    if (oppSkills.length === 0) {
-      return { ...opp, score: 0 };
+    let skillScore = 0;
+    if (oppSkills.length > 0) {
+      let matchCount = 0;
+      oppSkills.forEach(skill => {
+        if (volunteerSkills.has(skill)) {
+          matchCount++;
+        }
+      });
+      skillScore = matchCount / oppSkills.length;
     }
 
-    let matchCount = 0;
-    oppSkills.forEach(skill => {
-      // Check if volunteer has this skill (case insensitive check was done by normalize)
-      // But wait, our normalize lowercases everything? Yes.
-      if (volunteerSkills.has(skill)) {
-        matchCount++;
+    // Calculate location boost
+    let locationBoost = 0;
+    if (opp.location && volunteerLocations.size > 0) {
+      // If opportunity is in one of volunteer's locations, boost by 0.2
+      if (volunteerLocations.has(opp.location.toLowerCase())) {
+        locationBoost = 0.2;
       }
-    });
+    }
 
-    const score = matchCount / oppSkills.length;
+    // Final score: skills score + location boost (max 1.2)
+    const score = skillScore + locationBoost;
+
     return { ...opp, score };
   });
 
   return scored
     .sort((a, b) => b.score - a.score);
-  // .slice(0, topN); // We might want to filter by threshold instead of slicing, or slice after filtering
 }

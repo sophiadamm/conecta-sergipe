@@ -46,12 +46,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { SERGIPE_CITIES } from '@/lib/locations';
 
 const opportunitySchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
   descricao: z.string().min(10, 'Descrição deve ter no mínimo 10 caracteres'),
   skills_required: z.string().optional(),
   horas_estimadas: z.coerce.number().min(1, 'Horas devem ser maior que 0'),
+  location: z.string().min(1, 'Localização é obrigatória'),
 });
 
 type OpportunityFormData = z.infer<typeof opportunitySchema>;
@@ -63,6 +65,7 @@ interface Opportunity {
   skills_required: string | null;
   horas_estimadas: number;
   ativa: boolean;
+  location: string | null;
 }
 
 interface Match {
@@ -107,6 +110,7 @@ export default function OngDashboard() {
       descricao: '',
       skills_required: '',
       horas_estimadas: 4,
+      location: '',
     },
   });
 
@@ -139,7 +143,7 @@ export default function OngDashboard() {
         .order('created_at', { ascending: false });
 
       if (oppsError) throw oppsError;
-      setOpportunities(oppsData || []);
+      setOpportunities(oppsData as unknown as Opportunity[] || []);
 
       // Load matches for this ONG's opportunities
       const { data: matchesData, error: matchesError } = await supabase
@@ -184,6 +188,7 @@ export default function OngDashboard() {
             descricao: data.descricao,
             skills_required: data.skills_required || null,
             horas_estimadas: data.horas_estimadas,
+            location: data.location,
           })
           .eq('id', editingOpportunity.id);
 
@@ -201,6 +206,7 @@ export default function OngDashboard() {
           descricao: data.descricao,
           skills_required: data.skills_required || null,
           horas_estimadas: data.horas_estimadas,
+          location: data.location,
         });
 
         if (error) throw error;
@@ -475,6 +481,7 @@ export default function OngDashboard() {
                             descricao: opp.descricao,
                             skills_required: opp.skills_required || '',
                             horas_estimadas: opp.horas_estimadas,
+                            location: opp.location || '',
                           });
                           setShowCreateDialog(true);
                         }}
@@ -706,6 +713,33 @@ export default function OngDashboard() {
               {form.formState.errors.descricao && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.descricao.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Localização da Vaga *</Label>
+              <Controller
+                name="location"
+                control={form.control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger id="location">
+                      <SelectValue placeholder="Selecione a cidade..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERGIPE_CITIES.map((city) => (
+                        <SelectItem key={city} value={city}>
+                          {city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {form.formState.errors.location && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.location.message}
                 </p>
               )}
             </div>
