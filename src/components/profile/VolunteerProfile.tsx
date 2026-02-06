@@ -5,13 +5,13 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VolunteerReviewsSection } from './VolunteerReviewsSection';
-import { 
-  User, 
-  Star, 
-  Clock, 
-  Briefcase, 
-  Linkedin, 
-  Github, 
+import {
+  User,
+  Star,
+  Clock,
+  Briefcase,
+  Linkedin,
+  Github,
   Award,
   CheckCircle2,
   ExternalLink
@@ -30,7 +30,7 @@ const experienceLevelMap: Record<string, { label: string; color: string }> = {
 export function VolunteerProfile({ profile }: VolunteerProfileProps) {
   const { data: completedMatches, isLoading: loadingMatches } = useVolunteerCompletedMatches(profile.id);
   const { data: reviews, isLoading: loadingReviews } = useVolunteerReviews(profile.id);
-  
+
   const reviewStats = calculateReviewStats(reviews || []);
 
   const skillsList = profile.skills ? profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -146,9 +146,9 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
               <h3 className="text-lg font-semibold mb-3">Competências</h3>
               <div className="flex flex-wrap gap-2">
                 {skillsList.map((skill, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="outline" 
+                  <Badge
+                    key={index}
+                    variant="outline"
                     className="px-3 py-1.5 text-sm bg-gradient-to-r from-primary/5 to-secondary/5 border-primary/20"
                   >
                     {skill}
@@ -168,10 +168,10 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
       </Card>
 
       {/* Reviews Section */}
-      <VolunteerReviewsSection 
-        reviews={reviews || []} 
-        stats={reviewStats} 
-        isLoading={loadingReviews} 
+      <VolunteerReviewsSection
+        reviews={reviews || []}
+        stats={reviewStats}
+        isLoading={loadingReviews}
       />
 
       {/* Portfolio Section */}
@@ -217,7 +217,7 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mt-3">
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
