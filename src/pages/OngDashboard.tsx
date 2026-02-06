@@ -360,7 +360,13 @@ export default function OngDashboard() {
           </div>
           <Button onClick={() => {
             setEditingOpportunity(null);
-            form.reset();
+            form.reset({
+              titulo: '',
+              descricao: '',
+              skills_required: '',
+              horas_estimadas: 4,
+              location: '',
+            });
             setShowCreateDialog(true);
           }} className="gap-2">
             <Plus className="h-4 w-4" />
@@ -436,7 +442,13 @@ export default function OngDashboard() {
                 </p>
                 <Button onClick={() => {
                   setEditingOpportunity(null);
-                  form.reset();
+                  form.reset({
+                    titulo: '',
+                    descricao: '',
+                    skills_required: '',
+                    horas_estimadas: 4,
+                    location: '',
+                  });
                   setShowCreateDialog(true);
                 }}>
                   Criar primeira oportunidade
@@ -681,7 +693,13 @@ export default function OngDashboard() {
         setShowCreateDialog(open);
         if (!open) {
           setEditingOpportunity(null);
-          form.reset();
+          form.reset({
+            titulo: '',
+            descricao: '',
+            skills_required: '',
+            horas_estimadas: 4,
+            location: '',
+          });
         }
       }}>
         <DialogContent className="sm:max-w-lg">
