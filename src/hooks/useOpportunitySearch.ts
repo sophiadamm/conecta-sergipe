@@ -1,5 +1,13 @@
+// src/hooks/useOpportunitySearch.ts
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+
+export interface SearchFilters {
+  query?: string;
+  skills?: string[]; // novas habilidades selecionadas
+  minHours?: number;
+  maxHours?: number;
+}
 
 export interface SearchResult {
   id: string;
@@ -8,74 +16,82 @@ export interface SearchResult {
   horas_estimadas: number;
   skills_required: string | null;
   created_at: string;
-  ong: {
-    id: string;
-    nome: string;
-    avatar_url: string | null;
-  };
+  ong: { id: string; nome: string; avatar_url: string | null };
+  compatibilityScore?: number;
+  matchExplanation?: string;
 }
 
-export interface SearchFilters {
-  query: string;
-  category: string;
+function norm(s?: string | null) {
+  if (!s) return '';
+  return s.toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
-
-const CATEGORIES = [
-  { value: 'all', label: 'Todas as categorias' },
-  { value: 'saúde', label: 'Saúde' },
-  { value: 'tecnologia', label: 'Tecnologia' },
-  { value: 'educação', label: 'Educação' },
-  { value: 'meio ambiente', label: 'Meio Ambiente' },
-  { value: 'cultura', label: 'Cultura' },
-  { value: 'social', label: 'Assistência Social' },
-  { value: 'esportes', label: 'Esportes' },
-  { value: 'jurídico', label: 'Jurídico' },
-];
-
-export { CATEGORIES };
+function parseCsvToArray(raw?: string | null) {
+  if (!raw) return [] as string[];
+  return raw.toString().split(',').map(s => norm(s)).filter(Boolean);
+}
 
 export function useOpportunitySearch(filters: SearchFilters) {
   return useQuery({
     queryKey: ['opportunities-search', filters],
     queryFn: async () => {
+      const limitFetch = 200;
+      const pageLimit = 50;
+
       let query = supabase
         .from('opportunities')
         .select(`
-          id,
-          titulo,
-          descricao,
-          horas_estimadas,
-          skills_required,
-          created_at,
-          ong:profiles!opportunities_ong_id_fkey(
-            id,
-            nome,
-            avatar_url
-          )
+          id, titulo, descricao, horas_estimadas, skills_required, created_at,
+          ong:profiles!opportunities_ong_id_fkey(id, nome, avatar_url)
         `)
         .eq('ativa', true)
         .order('created_at', { ascending: false });
 
-      // Apply text search filter
-      if (filters.query.trim()) {
-        const searchTerm = `%${filters.query.trim()}%`;
-        query = query.or(
-          `titulo.ilike.${searchTerm},descricao.ilike.${searchTerm},skills_required.ilike.${searchTerm}`
-        );
+      // apply server-side hours filter (safe)
+      if (typeof filters.minHours === 'number') {
+        query = query.gte('horas_estimadas', filters.minHours);
+      }
+      if (typeof filters.maxHours === 'number') {
+        query = query.lte('horas_estimadas', filters.maxHours);
       }
 
-      // Apply category filter
-      if (filters.category && filters.category !== 'all') {
-        query = query.or(
-          `skills_required.ilike.%${filters.category}%,descricao.ilike.%${filters.category}%`
-        );
+      // coarse text filter (optional)
+      const rawQuery = (filters.query || '').trim();
+      if (rawQuery && rawQuery.length >= 2) {
+        const escaped = rawQuery.replace(/%/g, '\\%');
+        query = query.or(`titulo.ilike.%${escaped}%,descricao.ilike.%${escaped}%,skills_required.ilike.%${escaped}%`);
       }
 
-      const { data, error } = await query.limit(50);
-
+      const { data, error } = await query.limit(limitFetch);
       if (error) throw error;
-      return data as unknown as SearchResult[];
+      const rows = (data ?? []) as any[];
+
+      // client-side skills filtering (AND behavior: all selected skills must appear in skills_required)
+      const selectedSkills = (filters.skills || []).map(s => norm(s));
+      const filtered = rows.filter(r => {
+        if (selectedSkills.length === 0) return true;
+        const oppSkills = parseCsvToArray(r.skills_required ?? null);
+        // require that every selectedSkill is included in oppSkills (AND). Use includes for lenient match.
+        return selectedSkills.every(sk => oppSkills.includes(sk));
+      });
+
+      // Build lightweight score for ordering: prefer matches with more overlapping skills + recency
+      const scored = filtered.map(r => {
+        const oppSkills = parseCsvToArray(r.skills_required ?? null);
+        const overlap = selectedSkills.filter(sk => oppSkills.includes(sk)).length;
+        const skillScore = selectedSkills.length ? (overlap / Math.max(oppSkills.length, 1)) * 70 : 0;
+        const days = Math.floor((Date.now() - new Date(r.created_at).getTime()) / (1000*60*60*24));
+        const recencyScore = Math.max(0, Math.round((1 - Math.min(days, 30)/30) * 30)); // 30 points for recency
+        const score = Math.round(Math.min(100, skillScore + recencyScore));
+        const explanationParts = [];
+        if (overlap > 0) explanationParts.push(`${overlap} habilidades em comum`);
+        if (recencyScore > 10) explanationParts.push('Vaga recente');
+        return { ...r, compatibilityScore: score, matchExplanation: explanationParts.join(' • ') || 'Sem correspondências' } as SearchResult;
+      });
+
+      scored.sort((a, b) => (b.compatibilityScore ?? 0) - (a.compatibilityScore ?? 0));
+
+      return scored.slice(0, pageLimit) as SearchResult[];
     },
-    staleTime: 1000 * 30, // 30 seconds
+    staleTime: 1000 * 30,
   });
 }
