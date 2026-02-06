@@ -40,7 +40,7 @@ export function useOpportunitySearch(filters: SearchFilters) {
       const limitFetch = 200;
       const pageLimit = 50;
 
-      let query = supabase
+      let queryBuilder = supabase
         .from('opportunities')
         .select(`
           id, titulo, descricao, horas_estimadas, skills_required, location, created_at,
@@ -51,25 +51,25 @@ export function useOpportunitySearch(filters: SearchFilters) {
 
       // Apply server-side hours filter
       if (typeof filters.minHours === 'number') {
-        query = query.gte('horas_estimadas', filters.minHours);
+        queryBuilder = queryBuilder.gte('horas_estimadas', filters.minHours);
       }
       if (typeof filters.maxHours === 'number') {
-        query = query.lte('horas_estimadas', filters.maxHours);
+        queryBuilder = queryBuilder.lte('horas_estimadas', filters.maxHours);
       }
 
       // Apply location filter (OR logic for multiple cities)
       if (filters.location && filters.location.length > 0) {
-        query = query.in('location', filters.location);
+        queryBuilder = queryBuilder.in('location', filters.location);
       }
 
       // Text search filter (titulo, descricao, skills_required)
       const rawQuery = (filters.query || '').trim();
       if (rawQuery && rawQuery.length >= 2) {
         const escaped = rawQuery.replace(/%/g, '\\%');
-        query = query.or(`titulo.ilike.%${escaped}%,descricao.ilike.%${escaped}%,skills_required.ilike.%${escaped}%`);
+        queryBuilder = queryBuilder.or(`titulo.ilike.%${escaped}%,descricao.ilike.%${escaped}%,skills_required.ilike.%${escaped}%`);
       }
 
-      const { data, error } = await query.limit(limitFetch);
+      const { data, error } = await queryBuilder.limit(limitFetch);
       if (error) throw error;
       const rows = (data ?? []) as any[];
 

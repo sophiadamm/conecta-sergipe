@@ -41,6 +41,24 @@ export interface CompletedMatch {
   };
 }
 
+export interface ReviewData {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  reviewer: {
+    id: string;
+    nome: string;
+    avatar_url: string | null;
+  };
+}
+
+export interface ReviewStats {
+  avgRating: number;
+  totalReviews: number;
+  distribution: { stars: number; count: number; percentage: number }[];
+}
+
 export function useProfile(profileId: string | undefined) {
   return useQuery({
     queryKey: ['profile', profileId],
@@ -112,4 +130,65 @@ export function useVolunteerCompletedMatches(volunteerId: string | undefined) {
     },
     enabled: !!volunteerId,
   });
+}
+
+export function useVolunteerReviews(volunteerId: string | undefined) {
+  return useQuery({
+    queryKey: ['volunteer-reviews', volunteerId],
+    queryFn: async () => {
+      if (!volunteerId) return [];
+      
+      const { data, error } = await supabase
+        .from('reviews')
+        .select(`
+          id,
+          rating,
+          comment,
+          created_at,
+          reviewer:profiles!reviews_reviewer_id_fkey(
+            id,
+            nome,
+            avatar_url
+          )
+        `)
+        .eq('reviewed_id', volunteerId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as unknown as ReviewData[];
+    },
+    enabled: !!volunteerId,
+  });
+}
+
+export function calculateReviewStats(reviews: ReviewData[]): ReviewStats {
+  if (!reviews || reviews.length === 0) {
+    return {
+      avgRating: 0,
+      totalReviews: 0,
+      distribution: [5, 4, 3, 2, 1].map(stars => ({
+        stars,
+        count: 0,
+        percentage: 0,
+      })),
+    };
+  }
+
+  const totalReviews = reviews.length;
+  const sum = reviews.reduce((acc, r) => acc + r.rating, 0);
+  const avgRating = sum / totalReviews;
+
+  // Count ratings per star level
+  const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  reviews.forEach(r => {
+    counts[r.rating] = (counts[r.rating] || 0) + 1;
+  });
+
+  const distribution = [5, 4, 3, 2, 1].map(stars => ({
+    stars,
+    count: counts[stars],
+    percentage: (counts[stars] / totalReviews) * 100,
+  }));
+
+  return { avgRating, totalReviews, distribution };
 }
