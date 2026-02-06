@@ -27,9 +27,21 @@ import {
   Building2,
   Briefcase,
   MessageSquare,
+  Trash2,
+  Pencil,
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const opportunitySchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -78,6 +90,8 @@ export default function OngDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewingMatch, setReviewingMatch] = useState<Match | null>(null);
   const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0 });
+  const [opportunityToDelete, setOpportunityToDelete] = useState<string | null>(null);
+  const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
 
   const form = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
@@ -148,34 +162,56 @@ export default function OngDashboard() {
     }
   };
 
-  const handleCreateOpportunity = async (data: OpportunityFormData) => {
+  const handleSaveOpportunity = async (data: OpportunityFormData) => {
     if (!profile) return;
 
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('opportunities').insert({
-        ong_id: profile.id,
-        titulo: data.titulo,
-        descricao: data.descricao,
-        skills_required: data.skills_required || null,
-        horas_estimadas: data.horas_estimadas,
-      });
+      if (editingOpportunity) {
+        // Update existing opportunity
+        const { error } = await supabase
+          .from('opportunities')
+          .update({
+            titulo: data.titulo,
+            descricao: data.descricao,
+            skills_required: data.skills_required || null,
+            horas_estimadas: data.horas_estimadas,
+          })
+          .eq('id', editingOpportunity.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      toast({
-        title: 'Oportunidade criada!',
-        description: 'Voluntários poderão se candidatar agora.',
-      });
+        toast({
+          title: 'Oportunidade atualizada!',
+          description: 'As alterações foram salvas com sucesso.',
+        });
+      } else {
+        // Create new opportunity
+        const { error } = await supabase.from('opportunities').insert({
+          ong_id: profile.id,
+          titulo: data.titulo,
+          descricao: data.descricao,
+          skills_required: data.skills_required || null,
+          horas_estimadas: data.horas_estimadas,
+        });
+
+        if (error) throw error;
+
+        toast({
+          title: 'Oportunidade criada!',
+          description: 'Voluntários poderão se candidatar agora.',
+        });
+      }
 
       setShowCreateDialog(false);
+      setEditingOpportunity(null);
       form.reset();
       loadData();
     } catch (error) {
-      console.error('Error creating opportunity:', error);
+      console.error('Error saving opportunity:', error);
       toast({
-        title: 'Erro ao criar oportunidade',
+        title: editingOpportunity ? 'Erro ao atualizar' : 'Erro ao criar oportunidade',
         variant: 'destructive',
       });
     } finally {
@@ -266,6 +302,34 @@ export default function OngDashboard() {
     );
   }
 
+  const handleDeleteOpportunity = async () => {
+    if (!opportunityToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('opportunities')
+        .delete()
+        .eq('id', opportunityToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Oportunidade excluída',
+        description: 'A oportunidade foi removida com sucesso.',
+      });
+
+      loadData();
+    } catch (error) {
+      console.error('Error deleting opportunity:', error);
+      toast({
+        title: 'Erro ao excluir',
+        variant: 'destructive',
+      });
+    } finally {
+      setOpportunityToDelete(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -281,7 +345,11 @@ export default function OngDashboard() {
               Gerencie suas oportunidades e voluntários.
             </p>
           </div>
-          <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+          <Button onClick={() => {
+            setEditingOpportunity(null);
+            form.reset();
+            setShowCreateDialog(true);
+          }} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Oportunidade
           </Button>
@@ -353,7 +421,11 @@ export default function OngDashboard() {
                 <p className="text-muted-foreground mb-4">
                   Você ainda não criou nenhuma oportunidade.
                 </p>
-                <Button onClick={() => setShowCreateDialog(true)}>
+                <Button onClick={() => {
+                  setEditingOpportunity(null);
+                  form.reset();
+                  setShowCreateDialog(true);
+                }}>
                   Criar primeira oportunidade
                 </Button>
               </Card>
@@ -385,6 +457,35 @@ export default function OngDashboard() {
                         )}
                       </div>
                     </CardContent>
+                    <CardFooter className="justify-end gap-2 pt-0">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingOpportunity(opp);
+                          form.reset({
+                            titulo: opp.titulo,
+                            descricao: opp.descricao,
+                            skills_required: opp.skills_required || '',
+                            horas_estimadas: opp.horas_estimadas,
+                          });
+                          setShowCreateDialog(true);
+                        }}
+                        className="gap-2"
+                      >
+                        <Pencil className="h-4 w-4" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setOpportunityToDelete(opp.id)}
+                        className="gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Excluir
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>
@@ -501,13 +602,19 @@ export default function OngDashboard() {
         </Tabs>
       </main>
 
-      {/* Create Opportunity Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+      {/* Create/Edit Opportunity Dialog */}
+      <Dialog open={showCreateDialog} onOpenChange={(open) => {
+        setShowCreateDialog(open);
+        if (!open) {
+          setEditingOpportunity(null);
+          form.reset();
+        }
+      }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Nova Oportunidade</DialogTitle>
+            <DialogTitle>{editingOpportunity ? 'Editar Oportunidade' : 'Nova Oportunidade'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleCreateOpportunity)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSaveOpportunity)} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="titulo">Título</Label>
               <Input
@@ -576,7 +683,7 @@ export default function OngDashboard() {
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  'Criar Oportunidade'
+                  editingOpportunity ? 'Salvar Alterações' : 'Criar Oportunidade'
                 )}
               </Button>
             </DialogFooter>
@@ -648,6 +755,23 @@ export default function OngDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!opportunityToDelete} onOpenChange={() => setOpportunityToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Oportunidade</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta oportunidade? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteOpportunity} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
