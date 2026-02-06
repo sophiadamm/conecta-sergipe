@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useOpportunitySearch } from '@/hooks/useOpportunitySearch';
 import { useOngSearch } from '@/hooks/useOngSearch';
-import { Clock, Building2, ArrowRight, Briefcase } from 'lucide-react';
+import { Clock, Building2, ArrowRight, Briefcase, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExploreFilters from '@/components/ExploreFilters';
@@ -22,6 +22,7 @@ export default function Explore() {
     skills: [] as string[],
     minHours: 0,
     maxHours: 40,
+    location: [] as string[],
   });
 
   // Restore saved filters
@@ -32,7 +33,7 @@ export default function Explore() {
         const parsed = JSON.parse(saved);
         setFilters((f) => ({ ...f, ...parsed }));
       }
-    } catch {}
+    } catch { }
   }, []);
 
   // Debounced query (for ONG search)
@@ -42,13 +43,14 @@ export default function Explore() {
   const { data: opportunities, isLoading: loadingOpps, error: errorOpps } = useOpportunitySearch(filters);
   const { data: ongs, isLoading: loadingOngs, error: errorOngs } = useOngSearch({
     query: debouncedFiltersQuery,
+    location: filters.location,
   });
 
   function handleFiltersChange(next: typeof filters) {
     setFilters(next);
     try {
       localStorage.setItem('exploreFilters', JSON.stringify(next));
-    } catch {}
+    } catch { }
   }
 
   return (
@@ -57,6 +59,12 @@ export default function Explore() {
 
       <main className="container py-8">
         <div className="mb-8">
+          <Link to="/dashboard">
+            <Button variant="ghost" className="mb-4 gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
+            </Button>
+          </Link>
           <h1 className="text-3xl font-bold mb-2">Explorar Oportunidades</h1>
           <p className="text-muted-foreground">Encontre oportunidades de voluntariado que combinam com você</p>
         </div>
@@ -76,6 +84,7 @@ export default function Explore() {
               skills: filters.skills ?? [],
               minHours: filters.minHours ?? 0,
               maxHours: filters.maxHours ?? 40,
+              location: filters.location ?? [],
             }}
             onChange={(next) => handleFiltersChange(next)}
           />
@@ -90,16 +99,21 @@ export default function Explore() {
                   skills: filters.skills ?? [],
                   minHours: filters.minHours ?? 0,
                   maxHours: filters.maxHours ?? 40,
+                  location: filters.location ?? [],
                 }}
                 onChange={(next) => handleFiltersChange(next)}
               />
             ) : (
-              <Card className="p-4">
-                <CardContent>
-                  <h4 className="font-semibold mb-2">Filtros</h4>
-                  <p className="text-sm text-muted-foreground">Use o painel para buscar ONGs por nome e bio.</p>
-                </CardContent>
-              </Card>
+              <ExploreFilters
+                value={{
+                  query: filters.query ?? '',
+                  skills: filters.skills ?? [],
+                  minHours: filters.minHours ?? 0,
+                  maxHours: filters.maxHours ?? 40,
+                  location: filters.location ?? [],
+                }}
+                onChange={(next) => handleFiltersChange(next)}
+              />
             )}
           </div>
 
@@ -107,7 +121,7 @@ export default function Explore() {
             {searchType === 'vagas' ? (
               loadingOpps ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1,2,3,4,5,6].map(i => (
+                  {[1, 2, 3, 4, 5, 6].map(i => (
                     <Card key={i} className="overflow-hidden">
                       <CardContent className="p-6 space-y-4">
                         <div className="flex items-center gap-3">
@@ -153,23 +167,12 @@ export default function Explore() {
                             </Link>
 
                             <Link to={`/vaga/${opportunity.id}`}>
-                              <div className="flex items-start justify-between gap-4">
-                                <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">{opportunity.titulo}</h3>
-                                {typeof opportunity.compatibilityScore === 'number' && (
-                                  <div className="text-right ml-2">
-                                    <span className="inline-flex items-center gap-2 text-xs font-medium px-2 py-1 rounded-full bg-gradient-to-r from-green-50 to-green-100 text-green-800">
-                                      {opportunity.compatibilityScore}% compatível
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
+                              <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors">{opportunity.titulo}</h3>
                               <p className="text-sm text-muted-foreground line-clamp-3 mb-2">{opportunity.descricao}</p>
                             </Link>
 
-                            {opportunity.matchExplanation && <div className="text-xs text-slate-500 mb-3">{opportunity.matchExplanation}</div>}
-
                             <div className="flex flex-wrap gap-2 mb-4">
-                              {skills.slice(0,3).map((skill,i) => <Badge key={i} variant="outline" className="text-xs">{skill}</Badge>)}
+                              {skills.slice(0, 3).map((skill, i) => <Badge key={i} variant="outline" className="text-xs">{skill}</Badge>)}
                               {skills.length > 3 && <Badge variant="outline" className="text-xs">+{skills.length - 3}</Badge>}
                             </div>
 
@@ -200,8 +203,8 @@ export default function Explore() {
                       ? 'Tente ajustar os filtros de busca'
                       : 'Ainda não há oportunidades publicadas'}
                   </p>
-                  {(filters.query || (filters.skills && filters.skills.length > 0)) && (
-                    <Button variant="outline" onClick={() => handleFiltersChange({ query: '', skills: [], minHours: 0, maxHours: 40 })}>Limpar filtros</Button>
+                  {(filters.query || (filters.skills && filters.skills.length > 0) || filters.location.length > 0) && (
+                    <Button variant="outline" onClick={() => handleFiltersChange({ query: '', skills: [], minHours: 0, maxHours: 40, location: [] })}>Limpar filtros</Button>
                   )}
                 </Card>
               )
@@ -209,7 +212,7 @@ export default function Explore() {
               // ONGs list (unchanged)
               loadingOngs ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1,2,3,4,5,6].map(i => (
+                  {[1, 2, 3, 4, 5, 6].map(i => (
                     <Card key={i} className="overflow-hidden">
                       <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
                         <Skeleton className="h-24 w-24 rounded-full" />

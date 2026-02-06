@@ -6,12 +6,13 @@ export interface OngSearchResult {
     nome: string;
     bio: string | null;
     avatar_url: string | null;
-    municipio: string | null;
-    cause: string | null;
+    locations: string[] | null;
+    skills: string | null;
 }
 
 export interface SearchFilters {
     query: string;
+    location?: string[];
     category?: string;
 }
 
@@ -26,11 +27,12 @@ export function useOngSearch(filters: SearchFilters) {
           nome,
           bio,
           avatar_url,
+          locations,
           skills
         `)
                 .eq('tipo', 'ong');
 
-            // Apply text search filter
+            // Apply text search filter (nome, bio)
             if (filters.query.trim()) {
                 const searchTerm = `%${filters.query.trim()}%`;
                 query = query.or(
@@ -38,7 +40,7 @@ export function useOngSearch(filters: SearchFilters) {
                 );
             }
 
-            // Apply category filter
+            // Apply category/skills filter
             if (filters.category && filters.category !== 'all') {
                 query = query.ilike('skills', `%${filters.category}%`);
             }
@@ -46,7 +48,19 @@ export function useOngSearch(filters: SearchFilters) {
             const { data, error } = await query.limit(50);
 
             if (error) throw error;
-            return data as unknown as OngSearchResult[];
+
+            let results = data as unknown as OngSearchResult[];
+
+            // Client-side location filter (check if any selected city is in ONG's locations array)
+            if (filters.location && filters.location.length > 0) {
+                results = results.filter(ong => {
+                    if (!ong.locations) return false;
+                    // Return true if ONG has at least one of the selected cities
+                    return filters.location!.some(city => ong.locations!.includes(city));
+                });
+            }
+
+            return results;
         },
         staleTime: 1000 * 30, // 30 seconds
     });
