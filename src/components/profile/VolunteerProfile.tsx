@@ -3,6 +3,7 @@ import { ProfileData, useVolunteerCompletedMatches, useVolunteerReviews, calcula
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VolunteerReviewsSection } from './VolunteerReviewsSection';
 import {
@@ -14,7 +15,7 @@ import {
   Github,
   Award,
   CheckCircle2,
-  ExternalLink
+  MapPin
 } from 'lucide-react';
 
 interface VolunteerProfileProps {
@@ -67,32 +68,54 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
                 </Badge>
               </div>
 
-              {/* Social Links */}
+              {/* Localização */}
+              {profile.locations && profile.locations.length > 0 && (
+                <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                  <MapPin className="h-4 w-4 shrink-0" />
+                  <span className="text-sm">
+                    {Array.isArray(profile.locations)
+                      ? profile.locations.join(', ')
+                      : profile.locations}
+                  </span>
+                </div>
+              )}
+
+              {/* Redes Sociais (GitHub / LinkedIn) — só exibe se houver dado */}
               {(profile.linkedin_url || profile.github_url) && (
-                <div className="flex gap-3 mt-3">
-                  {profile.linkedin_url && (
-                    <a
-                      href={profile.linkedin_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      <Linkedin className="h-5 w-5" />
-                      <span className="hidden sm:inline">LinkedIn</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
-                  )}
+                <div className="flex items-center gap-2 mt-3">
                   {profile.github_url && (
-                    <a
-                      href={profile.github_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                      asChild
                     >
-                      <Github className="h-5 w-5" />
-                      <span className="hidden sm:inline">GitHub</span>
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                      <a
+                        href={profile.github_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Abrir GitHub"
+                      >
+                        <Github className="h-5 w-5" />
+                      </a>
+                    </Button>
+                  )}
+                  {profile.linkedin_url && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-foreground"
+                      asChild
+                    >
+                      <a
+                        href={profile.linkedin_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Abrir LinkedIn"
+                      >
+                        <Linkedin className="h-5 w-5" />
+                      </a>
+                    </Button>
                   )}
                 </div>
               )}

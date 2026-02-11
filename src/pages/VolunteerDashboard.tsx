@@ -21,6 +21,7 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
+  MapPin,
 } from 'lucide-react';
 
 interface Match {
@@ -34,6 +35,7 @@ interface Match {
     titulo: string;
     descricao: string;
     horas_estimadas: number;
+    location: string | null;
     ong: {
       nome: string;
     };
@@ -85,6 +87,7 @@ export default function VolunteerDashboard() {
             titulo,
             descricao,
             horas_estimadas,
+            location,
             ong:profiles!opportunities_ong_id_fkey(nome)
           )
         `)
@@ -452,6 +455,12 @@ export default function VolunteerDashboard() {
                             <CardDescription>
                               {match.opportunity.ong?.nome}
                             </CardDescription>
+                            {match.opportunity.location != null && match.opportunity.location.trim() !== '' && (
+                              <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4 shrink-0" />
+                                <span>{match.opportunity.location}</span>
+                              </div>
+                            )}
                           </div>
                           <Badge
                             variant={
@@ -518,9 +527,22 @@ export default function VolunteerDashboard() {
                             Sem comentário em texto.
                           </p>
                         )}
-                        <div className="mt-4 pt-4 border-t flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{match.horas_validadas || 0} horas validadas</span>
+                        <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>{match.horas_validadas || 0} horas validadas</span>
+                          </div>
+                          {match.opportunity.location != null && match.opportunity.location.trim() !== '' ? (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 shrink-0" />
+                              <span>{match.opportunity.location}</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 shrink-0" />
+                              <span>Localização não informada</span>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
