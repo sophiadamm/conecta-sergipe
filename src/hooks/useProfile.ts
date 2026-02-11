@@ -22,6 +22,7 @@ export interface OpportunityData {
   descricao: string;
   horas_estimadas: number;
   skills_required: string | null;
+  location: string | null;
   ativa: boolean;
   created_at: string;
   ong_id: string;

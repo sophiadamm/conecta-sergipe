@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useOpportunitySearch } from '@/hooks/useOpportunitySearch';
 import { useOngSearch } from '@/hooks/useOngSearch';
-import { Clock, Building2, ArrowRight, Briefcase, ArrowLeft } from 'lucide-react';
+import { Clock, Building2, ArrowRight, Briefcase, ArrowLeft, MapPin } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDebounce } from '@/hooks/useDebounce';
 import ExploreFilters from '@/components/ExploreFilters';
@@ -176,12 +176,20 @@ export default function Explore() {
                               {skills.length > 3 && <Badge variant="outline" className="text-xs">+{skills.length - 3}</Badge>}
                             </div>
 
-                            <div className="flex items-center justify-between pt-4 border-t">
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 border-t">
                               <div className="flex items-center gap-1 text-sm text-primary">
                                 <Clock className="h-4 w-4" />
                                 {opportunity.horas_estimadas}h
                               </div>
-                              <Button variant="ghost" size="sm" className="gap-1" asChild>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4 shrink-0" />
+                                <span>
+                                  {opportunity.location?.trim()
+                                    ? opportunity.location
+                                    : 'Localização não informada'}
+                                </span>
+                              </div>
+                              <Button variant="ghost" size="sm" className="gap-1 ml-auto" asChild>
                                 <Link to={`/vaga/${opportunity.id}`}>
                                   Ver vaga
                                   <ArrowRight className="h-4 w-4" />

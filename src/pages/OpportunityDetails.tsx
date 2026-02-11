@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Clock, Building, ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { Clock, Building, ArrowLeft, Loader2, CheckCircle2, MapPin } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Opportunity {
@@ -16,6 +16,7 @@ interface Opportunity {
     descricao: string;
     horas_estimadas: number;
     skills_required: string | null;
+    location: string | null;
     ong: {
         id: string;
         nome: string;
@@ -49,6 +50,7 @@ export default function OpportunityDetails() {
           descricao,
           horas_estimadas,
           skills_required,
+          location,
           ong:profiles!opportunities_ong_id_fkey(id, nome, bio)
         `)
                 .eq('id', id)
@@ -165,6 +167,12 @@ export default function OpportunityDetails() {
                                     <Building className="h-4 w-4" />
                                     <span className="underline decoration-dotted underline-offset-4">{opportunity.ong.nome}</span>
                                 </div>
+                                {(opportunity.location != null && opportunity.location.trim() !== '') && (
+                                    <div className="flex items-center gap-2 mt-2 text-muted-foreground">
+                                        <MapPin className="h-4 w-4 shrink-0" />
+                                        <span>{opportunity.location}</span>
+                                    </div>
+                                )}
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div>
@@ -208,6 +216,15 @@ export default function OpportunityDetails() {
                                     <div>
                                         <p className="font-medium">Carga Horária</p>
                                         <p className="text-sm text-muted-foreground">{opportunity.horas_estimadas}h estimadas</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <MapPin className="h-5 w-5 text-primary shrink-0" />
+                                    <div>
+                                        <p className="font-medium">Localização</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            {opportunity.location?.trim() ? opportunity.location : 'Localização não informada'}
+                                        </p>
                                     </div>
                                 </div>
                             </CardContent>
