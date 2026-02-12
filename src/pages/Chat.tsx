@@ -201,7 +201,7 @@ export default function Chat() {
         if (!profile) return;
 
         // Use RPC for better performance and consistency
-        const { error } = await supabase.rpc('mark_messages_as_read', {
+        const { error } = await supabase.rpc('mark_messages_as_read' as any, {
             p_conversation_id: conversationId
         });
 
@@ -321,7 +321,7 @@ export default function Chat() {
 
         try {
             // Use Secure RPC to send message (Bypasses RLS issues)
-            const { data, error } = await supabase.rpc('send_message_secure', {
+            const { data, error } = await supabase.rpc('send_message_secure' as any, {
                 p_recipient_id: recipientId,
                 p_content: messageContent,
             });
