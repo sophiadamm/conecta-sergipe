@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { useOngReviews } from '@/hooks/useOngReviews';
 import { supabase } from '@/integrations/supabase/client';
+import { generateEmbedding, buildOpportunityText } from '@/lib/embeddings';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
 import {
   Plus,
@@ -72,6 +74,7 @@ interface Opportunity {
   horas_estimadas: number;
   ativa: boolean;
   location: string | null;
+  embedding?: number[] | null;
 }
 
 interface Match {
@@ -111,6 +114,8 @@ export default function OngDashboard() {
   const [selectedOpportunityFilter, setSelectedOpportunityFilter] = useState<string>('all');
   const [selectedActiveOpportunityFilter, setSelectedActiveOpportunityFilter] = useState<string>('all');
   const [viewingVolunteer, setViewingVolunteer] = useState<Match['voluntario'] | null>(null);
+  const [isOptimizingOpportunities, setIsOptimizingOpportunities] = useState(false);
+  const [optimizationProgress, setOptimizationProgress] = useState({ current: 0, total: 0 });
 
   const { reviews: ongReviews, avgRating: ongAvgRating, totalCount: ongReviewsCount } = useOngReviews(profile?.id);
 
@@ -194,17 +199,31 @@ export default function OngDashboard() {
     setIsSubmitting(true);
 
     try {
+      // Generate embedding from opportunity text
+      const opportunityText = buildOpportunityText({
+        titulo: data.titulo,
+        descricao: data.descricao,
+        skills_required: data.skills_required || null,
+      });
+      const embedding = await generateEmbedding(opportunityText);
+
+      const updateData: any = {
+        titulo: data.titulo,
+        descricao: data.descricao,
+        skills_required: data.skills_required || null,
+        horas_estimadas: data.horas_estimadas,
+        location: data.location,
+      };
+
+      if (embedding) {
+        updateData.embedding = JSON.stringify(embedding);
+      }
+
       if (editingOpportunity) {
         // Update existing opportunity
         const { error } = await supabase
           .from('opportunities')
-          .update({
-            titulo: data.titulo,
-            descricao: data.descricao,
-            skills_required: data.skills_required || null,
-            horas_estimadas: data.horas_estimadas,
-            location: data.location,
-          })
+          .update(updateData)
           .eq('id', editingOpportunity.id);
 
         if (error) throw error;
@@ -216,12 +235,8 @@ export default function OngDashboard() {
       } else {
         // Create new opportunity
         const { error } = await supabase.from('opportunities').insert({
+          ...updateData,
           ong_id: profile.id,
-          titulo: data.titulo,
-          descricao: data.descricao,
-          skills_required: data.skills_required || null,
-          horas_estimadas: data.horas_estimadas,
-          location: data.location,
         });
 
         if (error) throw error;
@@ -244,6 +259,84 @@ export default function OngDashboard() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleOptimizeOpportunities = async () => {
+    if (!profile) return;
+
+    setIsOptimizingOpportunities(true);
+    setOptimizationProgress({ current: 0, total: 0 });
+
+    try {
+      // Buscar todas as oportunidades da ONG sem embedding
+      const { data: opportunitiesWithoutEmbedding, error: fetchError } = await supabase
+        .from('opportunities')
+        .select('id, titulo, descricao, skills_required')
+        .eq('ong_id', profile.id)
+        .is('embedding', null);
+
+      if (fetchError) throw fetchError;
+
+      if (!opportunitiesWithoutEmbedding || opportunitiesWithoutEmbedding.length === 0) {
+        toast({
+          title: 'Tudo otimizado!',
+          description: 'Todas as suas oportunidades já possuem embeddings gerados.',
+        });
+        setIsOptimizingOpportunities(false);
+        return;
+      }
+
+      setOptimizationProgress({ current: 0, total: opportunitiesWithoutEmbedding.length });
+
+      // Processar cada oportunidade
+      for (let i = 0; i < opportunitiesWithoutEmbedding.length; i++) {
+        const opp = opportunitiesWithoutEmbedding[i];
+        
+        try {
+          // Gerar embedding
+          const opportunityText = buildOpportunityText({
+            titulo: opp.titulo,
+            descricao: opp.descricao,
+            skills_required: opp.skills_required || null,
+          });
+          const embedding = await generateEmbedding(opportunityText);
+
+          if (embedding) {
+            // Atualizar no Supabase
+            const { error: updateError } = await supabase
+              .from('opportunities')
+              .update({ embedding: JSON.stringify(embedding) })
+              .eq('id', opp.id);
+
+            if (updateError) {
+              console.error(`Erro ao atualizar oportunidade ${opp.id}:`, updateError);
+            }
+          }
+
+          setOptimizationProgress({ current: i + 1, total: opportunitiesWithoutEmbedding.length });
+        } catch (error) {
+          console.error(`Erro ao processar oportunidade ${opp.id}:`, error);
+        }
+      }
+
+      toast({
+        title: 'Otimização concluída!',
+        description: `${opportunitiesWithoutEmbedding.length} oportunidade(s) processada(s) com sucesso.`,
+      });
+
+      // Recarregar dados
+      loadData();
+    } catch (error) {
+      console.error('Error optimizing opportunities:', error);
+      toast({
+        title: 'Erro ao otimizar',
+        description: 'Ocorreu um erro ao processar as oportunidades. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsOptimizingOpportunities(false);
+      setOptimizationProgress({ current: 0, total: 0 });
     }
   };
 
@@ -469,6 +562,54 @@ export default function OngDashboard() {
           </TabsList>
 
           <TabsContent value="opportunities" className="space-y-4">
+            {opportunities.length > 0 && (
+              <Card className="p-4">
+                <div className="flex flex-col gap-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="font-medium">Otimização de Vagas</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Gere embeddings para melhorar o matching semântico das suas oportunidades
+                      </p>
+                    </div>
+                    <Button
+                      onClick={handleOptimizeOpportunities}
+                      disabled={isOptimizingOpportunities}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      {isOptimizingOpportunities ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <Briefcase className="h-4 w-4" />
+                          Otimizar Vagas
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  {isOptimizingOpportunities && optimizationProgress.total > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Processando oportunidades...
+                        </span>
+                        <span className="font-medium">
+                          {optimizationProgress.current} / {optimizationProgress.total}
+                        </span>
+                      </div>
+                      <Progress
+                        value={(optimizationProgress.current / optimizationProgress.total) * 100}
+                        className="h-2"
+                      />
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
             {opportunities.length === 0 ? (
               <Card className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">
