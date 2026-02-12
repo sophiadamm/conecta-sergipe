@@ -8,6 +8,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, MessageSquare } from 'lucide-react';
 import { ReviewCard } from './ReviewCard';
+import { ReviewHighlights } from './ReviewHighlights';
 
 interface OngReviewsSectionProps {
   reviews: OngReview[];
@@ -82,6 +83,12 @@ export function OngReviewsSection({ reviews, stats, isLoading }: OngReviewsSecti
                 ))}
               </div>
             </div>
+
+            {/* Highlights - Principais Elogios */}
+            <ReviewHighlights
+              tags={reviews.map(r => r.tags_voluntario ?? [])}
+              title="Principais Pontos Fortes"
+            />
 
             <div className="space-y-4">
               <h4 className="font-semibold flex items-center gap-2">

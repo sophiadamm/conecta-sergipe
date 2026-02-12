@@ -8,6 +8,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, MessageSquare } from 'lucide-react';
 import { ReviewCard } from './ReviewCard';
+import { ReviewHighlights } from './ReviewHighlights';
 
 interface VolunteerReviewsSectionProps {
   reviews: ReviewData[];
@@ -85,26 +86,11 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
               </div>
             </div>
 
-            {/* Tag aggregate (prova social) */}
-            {(() => {
-              const tagCounts: Record<string, number> = {};
-              reviews.forEach((r) => {
-                (r.tags_ong ?? []).forEach((t) => {
-                  tagCounts[t] = (tagCounts[t] ?? 0) + 1;
-                });
-              });
-              const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
-              if (sorted.length === 0) return null;
-              return (
-                <div className="flex flex-wrap gap-2">
-                  {sorted.map(([tag, count]) => (
-                    <Badge key={tag} variant="secondary" className="text-xs font-normal">
-                      {count}x {tag}
-                    </Badge>
-                  ))}
-                </div>
-              );
-            })()}
+            {/* Highlights - Principais Elogios */}
+            <ReviewHighlights
+              tags={reviews.map(r => r.tags_ong ?? [])}
+              title="Principais Competências"
+            />
 
             {/* Reviews List */}
             <div className="space-y-4">

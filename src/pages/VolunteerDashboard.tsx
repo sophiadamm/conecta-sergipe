@@ -33,6 +33,7 @@ import {
   Star,
 } from 'lucide-react';
 import { ReviewCard } from '@/components/profile/ReviewCard';
+import { ReviewHighlights } from '@/components/profile/ReviewHighlights';
 
 interface Match {
   id: string;
@@ -595,30 +596,43 @@ export default function VolunteerDashboard() {
                 </p>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {matches
-                  .filter((m) => m.status === 'concluido')
-                  .map((match) => (
-                    <ReviewCard
-                      key={match.id}
-                      reviewer={{
-                        id: match.opportunity.ong.id,
-                        name: match.opportunity.ong.nome,
-                        avatarUrl: null, // ONGs usually don't have personal avatars here, or we need to fetch it. For now null is fine as per original design.
-                      }}
-                      rating={match.rating || 0}
-                      date={new Date(match.updated_at).toLocaleDateString('pt-BR', {
-                        day: 'numeric',
-                        month: 'long',
-                        year: 'numeric',
-                      })}
-                      subtitle={match.opportunity.titulo}
-                      comment={match.feedback_ong || undefined}
-                      tags={match.tags_ong}
-                      expandLabel="Ver competências destacadas"
-                    />
-                  ))}
-              </div>
+              <>
+                {/* Resumo de Competências Reconhecidas */}
+                <div className="mb-8">
+                  <ReviewHighlights
+                    tags={matches
+                      .filter((m) => m.status === 'concluido')
+                      .map((m) => m.tags_ong ?? [])
+                    }
+                    title="Resumo de Competências Reconhecidas"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {matches
+                    .filter((m) => m.status === 'concluido')
+                    .map((match) => (
+                      <ReviewCard
+                        key={match.id}
+                        reviewer={{
+                          id: match.opportunity.ong.id,
+                          name: match.opportunity.ong.nome,
+                          avatarUrl: null, // ONGs usually don't have personal avatars here, or we need to fetch it. For now null is fine as per original design.
+                        }}
+                        rating={match.rating || 0}
+                        date={new Date(match.updated_at).toLocaleDateString('pt-BR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                        subtitle={match.opportunity.titulo}
+                        comment={match.feedback_ong || undefined}
+                        tags={match.tags_ong}
+                        expandLabel="Ver competências destacadas"
+                      />
+                    ))}
+                </div>
+              </>
             )}
           </TabsContent>
 
