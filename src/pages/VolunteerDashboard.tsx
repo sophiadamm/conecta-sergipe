@@ -12,15 +12,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
   Clock,
   Heart,
   Trophy,
   Target,
-  CheckCircle2,
   MessageSquare,
   Sparkles,
   ArrowRight,
   Loader2,
+  Star,
 } from 'lucide-react';
 
 interface Match {
@@ -28,7 +37,9 @@ interface Match {
   status: string;
   horas_validadas: number;
   feedback_ong: string | null;
+  feedback_voluntario: string | null;
   rating: number | null;
+  rating_voluntario: number | null;
   opportunity: {
     id: string;
     titulo: string;
@@ -48,6 +59,9 @@ export default function VolunteerDashboard() {
   const [loading, setLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado' | 'concluido'>('todos');
+  const [evaluatingMatch, setEvaluatingMatch] = useState<Match | null>(null);
+  const [volunteerReviewData, setVolunteerReviewData] = useState({ rating: 5, feedback: '' });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -78,7 +92,9 @@ export default function VolunteerDashboard() {
           status,
           horas_validadas,
           feedback_ong,
+          feedback_voluntario,
           rating,
+          rating_voluntario,
           opportunity_id,
           opportunity:opportunities(
             id,
@@ -202,6 +218,51 @@ export default function VolunteerDashboard() {
     (matches.filter((m) => m.rating).length || 1) || 0;
 
   const completedCount = matches.filter((m) => m.status === 'concluido').length;
+
+  const handleSubmitVolunteerReview = async () => {
+    if (!evaluatingMatch) return;
+
+    setIsSubmittingReview(true);
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update({
+          rating_voluntario: volunteerReviewData.rating,
+          feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+        })
+        .eq('id', evaluatingMatch.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Avaliação enviada!',
+        description: 'Obrigado por avaliar esta experiência.',
+      });
+
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === evaluatingMatch.id
+            ? {
+                ...m,
+                rating_voluntario: volunteerReviewData.rating,
+                feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+              }
+            : m
+        )
+      );
+      setEvaluatingMatch(null);
+      setVolunteerReviewData({ rating: 5, feedback: '' });
+    } catch (error) {
+      console.error('Error submitting volunteer review:', error);
+      toast({
+        title: 'Erro ao enviar avaliação',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -470,6 +531,45 @@ export default function VolunteerDashboard() {
                           {match.opportunity.descricao}
                         </p>
                       </CardContent>
+                      {match.status === 'concluido' && (
+                        <CardFooter className="border-t pt-4">
+                          {match.rating_voluntario != null ||
+                          (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
+                            <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
+                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                Sua Avaliação
+                              </p>
+                              {match.rating_voluntario != null && (
+                                <div className="flex items-center gap-1.5">
+                                  <StarRating rating={match.rating_voluntario} size="sm" />
+                                  <span className="text-sm text-muted-foreground">
+                                    {match.rating_voluntario}/5
+                                  </span>
+                                </div>
+                              )}
+                              {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
+                                <p className="text-sm text-foreground/90">
+                                  {match.feedback_voluntario}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex w-full justify-end">
+                              <Button
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                  setEvaluatingMatch(match);
+                                  setVolunteerReviewData({ rating: 5, feedback: '' });
+                                }}
+                              >
+                                <Star className="h-4 w-4" />
+                                Avaliar Experiência
+                              </Button>
+                            </div>
+                          )}
+                        </CardFooter>
+                      )}
                     </Card>
                   ))}
               </div>
@@ -522,6 +622,43 @@ export default function VolunteerDashboard() {
                           <Clock className="h-4 w-4" />
                           <span>{match.horas_validadas || 0} horas validadas</span>
                         </div>
+                        <div className="mt-4 pt-4 border-t">
+                          {match.rating_voluntario != null ||
+                          (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
+                            <div className="rounded-lg bg-muted/50 p-4 space-y-3">
+                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                Sua Avaliação
+                              </p>
+                              {match.rating_voluntario != null && (
+                                <div className="flex items-center gap-1.5">
+                                  <StarRating rating={match.rating_voluntario} size="sm" />
+                                  <span className="text-sm text-muted-foreground">
+                                    {match.rating_voluntario}/5
+                                  </span>
+                                </div>
+                              )}
+                              {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
+                                <p className="text-sm text-foreground/90">
+                                  {match.feedback_voluntario}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex justify-end">
+                              <Button
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                  setEvaluatingMatch(match);
+                                  setVolunteerReviewData({ rating: 5, feedback: '' });
+                                }}
+                              >
+                                <Star className="h-4 w-4" />
+                                Avaliar Experiência
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -529,6 +666,77 @@ export default function VolunteerDashboard() {
             )}
           </TabsContent>
 
+          {/* Modal: Avaliar Experiência (voluntário avalia a ONG) */}
+          <Dialog
+            open={!!evaluatingMatch}
+            onOpenChange={(open) => {
+              if (!open) setEvaluatingMatch(null);
+            }}
+          >
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Avaliar Experiência</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {evaluatingMatch && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="font-medium">{evaluatingMatch.opportunity.ong?.nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {evaluatingMatch.opportunity.titulo}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Nota (1 a 5 estrelas)</Label>
+                  <StarRating
+                    rating={volunteerReviewData.rating}
+                    size="lg"
+                    interactive
+                    onChange={(rating) =>
+                      setVolunteerReviewData((prev) => ({ ...prev, rating }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Comentário</Label>
+                  <Textarea
+                    placeholder="Conte como foi sua experiência com esta ONG..."
+                    value={volunteerReviewData.feedback}
+                    onChange={(e) =>
+                      setVolunteerReviewData((prev) => ({
+                        ...prev,
+                        feedback: e.target.value,
+                      }))
+                    }
+                    rows={4}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setEvaluatingMatch(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSubmitVolunteerReview}
+                  disabled={isSubmittingReview}
+                >
+                  {isSubmittingReview ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Enviar Avaliação
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </Tabs >
       </main >
     </div >
