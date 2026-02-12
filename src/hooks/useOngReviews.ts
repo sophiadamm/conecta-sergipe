@@ -5,6 +5,8 @@ export interface OngReview {
   id: string;
   rating_voluntario: number;
   feedback_voluntario: string | null;
+  tags_voluntario: string[] | null;
+  tags_ong: string[] | null;
   updated_at: string;
   voluntario_id: string;
   opportunity_id: string;
@@ -92,6 +94,8 @@ export function useOngReviews(ongId: string | undefined): UseOngReviewsResult {
           id,
           rating_voluntario,
           feedback_voluntario,
+          tags_voluntario,
+          tags_ong,
           updated_at,
           voluntario_id,
           opportunity_id,
@@ -109,6 +113,8 @@ export function useOngReviews(ongId: string | undefined): UseOngReviewsResult {
         id: m.id as string,
         rating_voluntario: m.rating_voluntario as number,
         feedback_voluntario: m.feedback_voluntario as string | null,
+        tags_voluntario: (m.tags_voluntario as string[] | null) ?? null,
+        tags_ong: (m.tags_ong as string[] | null) ?? null,
         updated_at: m.updated_at as string,
         voluntario_id: m.voluntario_id as string,
         opportunity_id: m.opportunity_id as string,

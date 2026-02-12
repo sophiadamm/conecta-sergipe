@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ReviewData, ReviewStats } from '@/hooks/useProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { StarRating } from '@/components/ui/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -83,6 +84,27 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
               </div>
             </div>
 
+            {/* Tag aggregate (prova social) */}
+            {(() => {
+              const tagCounts: Record<string, number> = {};
+              reviews.forEach((r) => {
+                (r.tags_ong ?? []).forEach((t) => {
+                  tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+                });
+              });
+              const sorted = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+              if (sorted.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-2">
+                  {sorted.map(([tag, count]) => (
+                    <Badge key={tag} variant="secondary" className="text-xs font-normal">
+                      {count}x {tag}
+                    </Badge>
+                  ))}
+                </div>
+              );
+            })()}
+
             {/* Reviews List */}
             <div className="space-y-4">
               <h4 className="font-semibold flex items-center gap-2">
@@ -129,6 +151,15 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
                           <p className="text-sm leading-relaxed">
                             {review.comment}
                           </p>
+                          {review.tags_ong && review.tags_ong.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {review.tags_ong.map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-xs font-normal">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

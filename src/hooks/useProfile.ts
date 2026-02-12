@@ -47,6 +47,7 @@ export interface ReviewData {
   comment: string | null;
   created_at: string;
   opportunity_title: string;
+  tags_ong: string[] | null;
   reviewer: {
     id: string;
     nome: string;
@@ -164,6 +165,7 @@ export function useVolunteerReviews(volunteerId: string | undefined) {
           id,
           rating,
           feedback_ong,
+          tags_ong,
           updated_at,
           opportunity:opportunities!inner(
             titulo,
@@ -187,6 +189,7 @@ export function useVolunteerReviews(volunteerId: string | undefined) {
         comment: item.feedback_ong,
         created_at: item.updated_at,
         opportunity_title: item.opportunity.titulo,
+        tags_ong: item.tags_ong ?? null,
         reviewer: item.opportunity.ong
       })) as ReviewData[];
     },

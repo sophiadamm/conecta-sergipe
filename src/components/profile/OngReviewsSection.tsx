@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { OngReview, OngReviewStats } from '@/hooks/useOngReviews';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { StarRating } from '@/components/ui/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -130,6 +131,15 @@ export function OngReviewsSection({ reviews, stats, isLoading }: OngReviewsSecti
                           <p className="text-sm leading-relaxed">
                             {review.feedback_voluntario}
                           </p>
+                          {review.tags_voluntario && review.tags_voluntario.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-2">
+                              {review.tags_voluntario.map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-xs font-normal">
+                                  {tag}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

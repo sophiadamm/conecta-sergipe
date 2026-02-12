@@ -11,6 +11,7 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+import { ONG_TAGS } from '@/lib/feedback-tags';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ interface Match {
   feedback_voluntario: string | null;
   rating: number | null;
   rating_voluntario: number | null;
+  tags_voluntario: string[] | null;
   opportunity: {
     id: string;
     titulo: string;
@@ -60,7 +62,7 @@ export default function VolunteerDashboard() {
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado' | 'concluido'>('todos');
   const [evaluatingMatch, setEvaluatingMatch] = useState<Match | null>(null);
-  const [volunteerReviewData, setVolunteerReviewData] = useState({ rating: 5, feedback: '' });
+  const [volunteerReviewData, setVolunteerReviewData] = useState({ rating: 5, feedback: '', tags: [] as string[] });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function VolunteerDashboard() {
           feedback_voluntario,
           rating,
           rating_voluntario,
+          tags_voluntario,
           opportunity_id,
           opportunity:opportunities(
             id,
@@ -229,6 +232,7 @@ export default function VolunteerDashboard() {
         .update({
           rating_voluntario: volunteerReviewData.rating,
           feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+          tags_voluntario: volunteerReviewData.tags.length > 0 ? volunteerReviewData.tags : null,
         })
         .eq('id', evaluatingMatch.id);
 
@@ -246,12 +250,13 @@ export default function VolunteerDashboard() {
                 ...m,
                 rating_voluntario: volunteerReviewData.rating,
                 feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+                tags_voluntario: volunteerReviewData.tags.length > 0 ? volunteerReviewData.tags : null,
               }
             : m
         )
       );
       setEvaluatingMatch(null);
-      setVolunteerReviewData({ rating: 5, feedback: '' });
+      setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
     } catch (error) {
       console.error('Error submitting volunteer review:', error);
       toast({
@@ -560,7 +565,7 @@ export default function VolunteerDashboard() {
                                 className="gap-2"
                                 onClick={() => {
                                   setEvaluatingMatch(match);
-                                  setVolunteerReviewData({ rating: 5, feedback: '' });
+                                  setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
                                 }}
                               >
                                 <Star className="h-4 w-4" />
@@ -622,7 +627,7 @@ export default function VolunteerDashboard() {
                           <Clock className="h-4 w-4" />
                           <span>{match.horas_validadas || 0} horas validadas</span>
                         </div>
-                        <div className="mt-4 pt-4 border-t">
+                        {/* <div className="mt-4 pt-4 border-t">
                           {match.rating_voluntario != null ||
                           (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
                             <div className="rounded-lg bg-muted/50 p-4 space-y-3">
@@ -650,7 +655,7 @@ export default function VolunteerDashboard() {
                                 className="gap-2"
                                 onClick={() => {
                                   setEvaluatingMatch(match);
-                                  setVolunteerReviewData({ rating: 5, feedback: '' });
+                                  setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
                                 }}
                               >
                                 <Star className="h-4 w-4" />
@@ -658,7 +663,7 @@ export default function VolunteerDashboard() {
                               </Button>
                             </div>
                           )}
-                        </div>
+                        </div> */}
                       </CardContent>
                     </Card>
                   ))}
@@ -697,6 +702,34 @@ export default function VolunteerDashboard() {
                       setVolunteerReviewData((prev) => ({ ...prev, rating }))
                     }
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground text-xs">Pontos Fortes da Experiência (opcional)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {ONG_TAGS.map((tag) => {
+                      const selected = volunteerReviewData.tags.includes(tag);
+                      return (
+                        <Button
+                          key={tag}
+                          type="button"
+                          variant={selected ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-8"
+                          onClick={() =>
+                            setVolunteerReviewData((prev) => ({
+                              ...prev,
+                              tags: selected
+                                ? prev.tags.filter((t) => t !== tag)
+                                : [...prev.tags, tag],
+                            }))
+                          }
+                        >
+                          {tag}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <div className="space-y-2">

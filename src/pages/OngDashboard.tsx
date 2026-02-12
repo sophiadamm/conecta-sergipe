@@ -50,6 +50,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SERGIPE_CITIES } from '@/lib/locations';
+import { VOLUNTEER_TAGS } from '@/lib/feedback-tags';
 
 const opportunitySchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -99,7 +100,7 @@ export default function OngDashboard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewingMatch, setReviewingMatch] = useState<Match | null>(null);
-  const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0 });
+  const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0, tags: [] as string[] });
   const [opportunityToDelete, setOpportunityToDelete] = useState<string | null>(null);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
   const [selectedOpportunityFilter, setSelectedOpportunityFilter] = useState<string>('all');
@@ -275,6 +276,7 @@ export default function OngDashboard() {
           horas_validadas: reviewData.horas,
           feedback_ong: reviewData.feedback,
           rating: reviewData.rating,
+          tags_ong: reviewData.tags.length > 0 ? reviewData.tags : null,
         })
         .eq('id', reviewingMatch.id);
 
@@ -286,7 +288,7 @@ export default function OngDashboard() {
       });
 
       setReviewingMatch(null);
-      setReviewData({ feedback: '', rating: 5, horas: 0 });
+      setReviewData({ feedback: '', rating: 5, horas: 0, tags: [] });
       loadData();
     } catch (error) {
       console.error('Error completing match:', error);
@@ -464,11 +466,6 @@ export default function OngDashboard() {
             <TabsTrigger value="feedbacks" className="gap-2">
               <MessageSquare className="h-4 w-4" />
               Meus Feedbacks
-              {ongReviewsCount > 0 && (
-                <Badge variant="secondary" className="ml-1">
-                  {ongReviewsCount}
-                </Badge>
-              )}
             </TabsTrigger>
           </TabsList>
 
@@ -717,6 +714,7 @@ export default function OngDashboard() {
                               feedback: '',
                               rating: 5,
                               horas: match.opportunity?.horas_estimadas || 0,
+                              tags: [],
                             });
                           }}
                           className="gap-2"
@@ -953,6 +951,34 @@ export default function OngDashboard() {
                 interactive
                 onChange={(rating) => setReviewData({ ...reviewData, rating })}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Destaques do Voluntário (opcional)</Label>
+              <div className="flex flex-wrap gap-2">
+                {VOLUNTEER_TAGS.map((tag) => {
+                  const selected = reviewData.tags.includes(tag);
+                  return (
+                    <Button
+                      key={tag}
+                      type="button"
+                      variant={selected ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8"
+                      onClick={() =>
+                        setReviewData({
+                          ...reviewData,
+                          tags: selected
+                            ? reviewData.tags.filter((t) => t !== tag)
+                            : [...reviewData.tags, tag],
+                        })
+                      }
+                    >
+                      {tag}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-2">
