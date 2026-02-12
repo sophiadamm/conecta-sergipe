@@ -3,6 +3,10 @@
 -- SQL Editor > New Query > Copiar e Colar > Run
 -- =============================================
 
+-- =============================================
+-- PARTE 1: ESTRUTURA BASE (Tabela e Políticas)
+-- =============================================
+
 -- 1. Criar tabela de notificações
 CREATE TABLE IF NOT EXISTS public.notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -64,15 +68,18 @@ CREATE POLICY "Usuários podem deletar próprias notificações"
     )
   );
 
+
 -- =============================================
--- TRIGGERS PARA CRIAÇÃO AUTOMÁTICA DE NOTIFICAÇÕES
+-- PARTE 2: TRIGGERS PARA CRIAÇÃO AUTOMÁTICA
 -- =============================================
 
 -- 6. Remover triggers e funções antigas se existirem
 DROP TRIGGER IF EXISTS trigger_notify_match_status_change ON public.matches;
 DROP TRIGGER IF EXISTS trigger_notify_new_application ON public.matches;
+DROP TRIGGER IF EXISTS trigger_notify_reviews ON public.matches; -- Novo
 DROP FUNCTION IF EXISTS public.notify_match_status_change();
 DROP FUNCTION IF EXISTS public.notify_new_application();
+DROP FUNCTION IF EXISTS public.notify_reviews(); -- Novo
 
 -- 7. Função para criar notificação quando status do match mudar
 CREATE OR REPLACE FUNCTION public.notify_match_status_change()
@@ -150,7 +157,63 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 9. Criar triggers
+-- 9. (NOVO) Função para criar notificação de AVALIAÇÕES (ONG <-> Voluntário)
+CREATE OR REPLACE FUNCTION public.notify_reviews()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_ong_user_id UUID;
+  v_voluntario_user_id UUID;
+  v_ong_nome TEXT;
+  v_voluntario_nome TEXT;
+  v_opportunity_title TEXT;
+BEGIN
+  -- Buscar dados comuns
+  SELECT 
+    p_ong.user_id, p_ong.nome,
+    p_vol.user_id, p_vol.nome,
+    o.titulo
+  INTO 
+    v_ong_user_id, v_ong_nome,
+    v_voluntario_user_id, v_voluntario_nome,
+    v_opportunity_title
+  FROM public.opportunities o
+  JOIN public.profiles p_ong ON p_ong.id = o.ong_id
+  JOIN public.profiles p_vol ON p_vol.id = NEW.voluntario_id
+  WHERE o.id = NEW.opportunity_id;
+
+  -- 9.1. CENÁRIO A: ONG avalia Voluntário
+  IF (OLD.rating IS NULL AND OLD.feedback_ong IS NULL) AND 
+     (NEW.rating IS NOT NULL OR NEW.feedback_ong IS NOT NULL) THEN
+     
+     INSERT INTO public.notifications (user_id, title, message, type, link)
+     VALUES (
+       v_voluntario_user_id,
+       'Nova avaliação recebida! ⭐',
+       'A ONG ' || v_ong_nome || ' avaliou sua participação em "' || v_opportunity_title || '".',
+       'volunteer_reviewed',
+       '/dashboard?tab=feedbacks' 
+     );
+  END IF;
+
+  -- 9.2. CENÁRIO B: Voluntário avalia ONG
+  IF (OLD.rating_voluntario IS NULL AND OLD.feedback_voluntario IS NULL) AND 
+     (NEW.rating_voluntario IS NOT NULL OR NEW.feedback_voluntario IS NOT NULL) THEN
+     
+     INSERT INTO public.notifications (user_id, title, message, type, link)
+     VALUES (
+       v_ong_user_id,
+       'Nova avaliação de voluntário! ⭐',
+       'O voluntário ' || v_voluntario_nome || ' avaliou a experiência em "' || v_opportunity_title || '".',
+       'ong_reviewed',
+       '/ong-dashboard?tab=reviews'
+     );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 10. Criar triggers
 CREATE TRIGGER trigger_notify_match_status_change
   AFTER UPDATE OF status ON public.matches
   FOR EACH ROW
@@ -161,9 +224,14 @@ CREATE TRIGGER trigger_notify_new_application
   FOR EACH ROW
   EXECUTE FUNCTION public.notify_new_application();
 
--- 10. Comentários para documentação
+CREATE TRIGGER trigger_notify_reviews
+  AFTER UPDATE ON public.matches
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_reviews();
+
+-- 11. Comentários para documentação
 COMMENT ON TABLE public.notifications IS 'Armazena notificações in-app para usuários';
-COMMENT ON COLUMN public.notifications.type IS 'Tipos: application_approved, application_rejected, new_candidacy';
+COMMENT ON COLUMN public.notifications.type IS 'Tipos: application_approved, application_rejected, new_candidacy, volunteer_reviewed, ong_reviewed';
 COMMENT ON COLUMN public.notifications.link IS 'URL para redirecionamento ao clicar na notificação';
 COMMENT ON COLUMN public.notifications.is_read IS 'Indica se a notificação foi lida pelo usuário';
 
@@ -174,14 +242,15 @@ COMMENT ON COLUMN public.notifications.is_read IS 'Indica se a notificação foi
 -- Verificar se tudo foi criado corretamente
 DO $$
 BEGIN
-  RAISE NOTICE '✅ Tabela notifications criada com sucesso!';
+  RAISE NOTICE '✅ Tabela notifications criada/verificada!';
   RAISE NOTICE '✅ Índices criados!';
   RAISE NOTICE '✅ Políticas RLS aplicadas!';
-  RAISE NOTICE '✅ Triggers instalados!';
+  RAISE NOTICE '✅ Triggers principais instalados!';
+  RAISE NOTICE '✅ Trigger de avaliações instalado!';
   RAISE NOTICE '';
-  RAISE NOTICE '🎉 Sistema de notificações instalado com sucesso!';
+  RAISE NOTICE '🎉 Sistema de notificações (incluindo avaliações) instalado com sucesso!';
   RAISE NOTICE '';
-  RAISE NOTICE '📋 Próximo passo: Habilitar Realtime';
+  RAISE NOTICE '📋 Próximo passo: Habilitar Realtime (se ainda não fez)';
   RAISE NOTICE '   1. Vá em Database → Replication';
   RAISE NOTICE '   2. Habilite Realtime para a tabela "notifications"';
 END $$;

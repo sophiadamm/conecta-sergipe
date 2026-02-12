@@ -32,6 +32,9 @@ export function NotificationBell() {
                 return '📋';
             case 'new_candidacy':
                 return '👋';
+            case 'volunteer_reviewed':
+            case 'ong_reviewed':
+                return '⭐';
             default:
                 return '🔔';
         }

@@ -1,0 +1,68 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║  ⭐ ATUALIZAÇÃO: NOTIFICAÇÕES DE AVALIAÇÕES IMPLEMENTADAS      ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+Sophia, o sistema foi expandido conforme solicitado!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 O QUE HÁ DE NOVO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Notificações Bilaterais de Feedback
+   • Quando a ONG avalia o Voluntário → Voluntário recebe notificação
+   • Quando o Voluntário avalia a ONG → ONG recebe notificação
+
+✅ Ícone Personalizado
+   • Ícone ⭐ (estrela/troféu) para destacar avaliações
+   • Diferente dos ícones padrão (🔔, 👋, 🎉)
+
+✅ Lógica Inteligente de Disparo
+   • Trigger configurado para disparar APENAS na primeira avaliação
+   • Evita spam se o usuário editar o feedback depois
+   • Detecta preenchimento de 'rating' ou 'feedback'
+
+✅ Redirecionamento Contextual
+   • Link direto para a aba de feedbacks (/dashboard?tab=feedbacks)
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 COMO ATUALIZAR (1 PASSO)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Você já tem o setup quase pronto. Apenas atualize o banco de dados:
+
+1. Abra o arquivo: setup_notifications.sql
+   (Ele já contém a NOVA lógica de avaliações)
+
+2. No Supabase Dashboard > SQL Editor:
+   COPIE, COLE e EXECUTE o conteúdo do arquivo setup_notifications.sql
+
+3. PRONTO!
+   Não precisa habilitar Realtime de novo se já fez.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧪 COMO TESTAR O NOVO FLUXO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Login como ONG
+2. Vá em Dashboard > Gerenciar Candidaturas
+3. Avalie um voluntário (dê uma nota/feedback)
+4. Logout
+5. Login como VOLUNTÁRIO (o que foi avaliado)
+6. Veja o sino com o ícone ⭐ e a mensagem!
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 ARQUIVOS ATUALIZADOS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔧 setup_notifications.sql (Lógica de trigger adicionada)
+🔧 src/components/NotificationBell.tsx (Ícones adicionados)
+🔧 NOTIFICATIONS_README.md (Documentação expandida)
+🔧 QUICK_START_NOTIFICATIONS.md (Guia atualizado)
+
+
+Desfrute do novo sistema de engajamento! ⭐
