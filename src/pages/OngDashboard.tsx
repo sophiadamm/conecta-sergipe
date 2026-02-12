@@ -4,7 +4,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { useOngReviews } from '@/hooks/useOngReviews';
 import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +35,7 @@ import {
   User,
   Mail,
   MapPin,
+  Star,
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
@@ -102,6 +105,8 @@ export default function OngDashboard() {
   const [selectedOpportunityFilter, setSelectedOpportunityFilter] = useState<string>('all');
   const [selectedActiveOpportunityFilter, setSelectedActiveOpportunityFilter] = useState<string>('all');
   const [viewingVolunteer, setViewingVolunteer] = useState<Match['voluntario'] | null>(null);
+
+  const { reviews: ongReviews, avgRating: ongAvgRating, totalCount: ongReviewsCount } = useOngReviews(profile?.id);
 
   const form = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
@@ -375,7 +380,7 @@ export default function OngDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -411,6 +416,30 @@ export default function OngDashboard() {
               <div className="text-3xl font-bold">{completedMatches}</div>
             </CardContent>
           </Card>
+
+          <Card className="border-warning/20">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Avaliação Média
+              </CardTitle>
+              <Star className="h-5 w-5 text-warning fill-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold">
+                  {ongReviewsCount === 0 ? '—' : ongAvgRating.toFixed(1)}
+                </span>
+                {ongReviewsCount > 0 && (
+                  <StarRating rating={Math.round(ongAvgRating)} size="sm" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {ongReviewsCount === 0
+                  ? 'Nenhuma avaliação ainda'
+                  : `${ongReviewsCount} avaliação${ongReviewsCount !== 1 ? 'ões' : ''} recebida${ongReviewsCount !== 1 ? 's' : ''}`}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="opportunities" className="space-y-6">
@@ -431,6 +460,15 @@ export default function OngDashboard() {
             <TabsTrigger value="active" className="gap-2">
               <Clock className="h-4 w-4" />
               Em Andamento
+            </TabsTrigger>
+            <TabsTrigger value="feedbacks" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Meus Feedbacks
+              {ongReviewsCount > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {ongReviewsCount}
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -689,6 +727,70 @@ export default function OngDashboard() {
                       </CardFooter>
                     </Card>
                   ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="feedbacks" className="space-y-4">
+            {ongReviewsCount === 0 ? (
+              <Card className="p-8 text-center">
+                <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground font-medium">Nenhuma avaliação recebida ainda</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Quando voluntários concluírem experiências e avaliarem sua organização, as notas e comentários aparecerão aqui.
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {ongReviews.map((review) => (
+                  <Card key={review.id}>
+                    <CardHeader>
+                      <div className="flex gap-4">
+                        <Avatar className="h-12 w-12 shrink-0 border">
+                          {review.voluntario?.avatar_url ? (
+                            <AvatarImage src={review.voluntario.avatar_url} alt={review.voluntario.nome} />
+                          ) : null}
+                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                            {review.voluntario?.nome?.charAt(0).toUpperCase() ?? '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+                            <Link
+                              to={`/perfil/${review.voluntario_id}`}
+                              className="hover:text-primary transition-colors underline decoration-dotted underline-offset-2"
+                            >
+                              {review.voluntario?.nome ?? 'Voluntário'}
+                            </Link>
+                            <StarRating rating={review.rating_voluntario} size="sm" />
+                            <span className="text-sm font-normal text-muted-foreground">
+                              {review.rating_voluntario}/5
+                            </span>
+                          </CardTitle>
+                          <CardDescription className="mt-0.5">
+                            {review.opportunity?.titulo ?? 'Oportunidade'}
+                          </CardDescription>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(review.updated_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric',
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    {review.feedback_voluntario != null && review.feedback_voluntario.trim() !== '' && (
+                      <CardContent className="pt-0">
+                        <div className="bg-muted/50 rounded-lg p-4">
+                          <p className="text-sm text-foreground/90 italic">
+                            "{review.feedback_voluntario}"
+                          </p>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
               </div>
             )}
           </TabsContent>
