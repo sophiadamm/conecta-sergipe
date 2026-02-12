@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { generateEmbedding, buildOpportunityText } from '@/lib/embeddings';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -264,28 +265,41 @@ export default function NewOpportunity() {
         setIsSubmitting(true);
 
         try {
+            // Generate embedding from opportunity text
+            const opportunityText = buildOpportunityText({
+                titulo: data.titulo,
+                descricao: data.descricao,
+                skills_required: data.causas || null,
+            });
+            const embedding = await generateEmbedding(opportunityText);
+
+            const baseData: any = {
+                titulo: data.titulo,
+                descricao: data.descricao,
+                skills_required: data.causas, // Keep for backward compatibility if needed, or remove
+                horas_estimadas: data.cargaHorariaSemanal,
+                location: data.cidade || profile?.locations?.[0] || 'Aracaju', // Keep for backward compatibility
+                // New fields
+                causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
+                min_vagas: data.vagas,
+                formato: data.formato,
+                emite_certificado: data.emiteCertificado === 'sim',
+                oferece_treinamento: data.ofereceTreinamento === 'sim',
+                recursos_oferecidos: data.recursosOferecidos,
+                endereco: data.endereco,
+                bairro: data.bairro,
+                cidade: data.cidade,
+            };
+
+            if (embedding) {
+                baseData.embedding = JSON.stringify(embedding);
+            }
+
             if (isEditMode && id) {
                 // UPDATE existing opportunity
                 const { error } = await supabase
                     .from('opportunities')
-                    .update({
-                        titulo: data.titulo,
-                        descricao: data.descricao,
-                        skills_required: data.causas, // Keep for backward compatibility if needed, or remove
-                        horas_estimadas: data.cargaHorariaSemanal,
-                        location: data.cidade || profile?.locations?.[0] || 'Aracaju', // Keep for backward compatibility
-                        // New fields
-                        causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
-                        min_vagas: data.vagas,
-                        formato: data.formato,
-                        nivel_experiencia: data.nivelExperiencia,
-                        emite_certificado: data.emiteCertificado === 'sim',
-                        oferece_treinamento: data.ofereceTreinamento === 'sim',
-                        recursos_oferecidos: data.recursosOferecidos,
-                        endereco: data.endereco,
-                        bairro: data.bairro,
-                        cidade: data.cidade,
-                    })
+                    .update(baseData)
                     .eq('id', id);
 
                 if (error) throw error;
