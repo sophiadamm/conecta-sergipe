@@ -11,25 +11,45 @@ import { StarRating } from '@/components/ui/star-rating';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+import { ONG_TAGS } from '@/lib/feedback-tags';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Clock,
   Heart,
   Trophy,
   Target,
-  CheckCircle2,
   MessageSquare,
   Sparkles,
   ArrowRight,
   Loader2,
+  Loader2,
+  Star,
   MapPin,
 } from 'lucide-react';
+
+} from 'lucide-react';
+import { ReviewCard } from '@/components/profile/ReviewCard';
+import { ReviewHighlights } from '@/components/profile/ReviewHighlights';
 
 interface Match {
   id: string;
   status: string;
   horas_validadas: number;
   feedback_ong: string | null;
+  feedback_voluntario: string | null;
   rating: number | null;
+  rating_voluntario: number | null;
+  tags_voluntario: string[] | null;
+  tags_ong: string[] | null;
+  updated_at: string;
   opportunity: {
     id: string;
     titulo: string;
@@ -37,6 +57,7 @@ interface Match {
     horas_estimadas: number;
     location: string | null;
     ong: {
+      id: string;
       nome: string;
     };
   };
@@ -50,6 +71,9 @@ export default function VolunteerDashboard() {
   const [loading, setLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'todos' | 'pendente' | 'aprovado' | 'rejeitado' | 'concluido'>('todos');
+  const [evaluatingMatch, setEvaluatingMatch] = useState<Match | null>(null);
+  const [volunteerReviewData, setVolunteerReviewData] = useState({ rating: 5, feedback: '', tags: [] as string[] });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -80,7 +104,12 @@ export default function VolunteerDashboard() {
           status,
           horas_validadas,
           feedback_ong,
+          feedback_voluntario,
           rating,
+          rating_voluntario,
+          tags_voluntario,
+          tags_ong,
+          updated_at,
           opportunity_id,
           opportunity:opportunities(
             id,
@@ -88,7 +117,8 @@ export default function VolunteerDashboard() {
             descricao,
             horas_estimadas,
             location,
-            ong:profiles!opportunities_ong_id_fkey(nome)
+            ong:profiles!opportunities_ong_id_fkey(id, nome)
+
           )
         `)
         .eq('voluntario_id', profile.id)
@@ -205,6 +235,53 @@ export default function VolunteerDashboard() {
     (matches.filter((m) => m.rating).length || 1) || 0;
 
   const completedCount = matches.filter((m) => m.status === 'concluido').length;
+
+  const handleSubmitVolunteerReview = async () => {
+    if (!evaluatingMatch) return;
+
+    setIsSubmittingReview(true);
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .update({
+          rating_voluntario: volunteerReviewData.rating,
+          feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+          tags_voluntario: volunteerReviewData.tags.length > 0 ? volunteerReviewData.tags : null,
+        })
+        .eq('id', evaluatingMatch.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Avaliação enviada!',
+        description: 'Obrigado por avaliar esta experiência.',
+      });
+
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === evaluatingMatch.id
+            ? {
+              ...m,
+              rating_voluntario: volunteerReviewData.rating,
+              feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+              tags_voluntario: volunteerReviewData.tags.length > 0 ? volunteerReviewData.tags : null,
+            }
+            : m
+        )
+      );
+      setEvaluatingMatch(null);
+      setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
+    } catch (error) {
+      console.error('Error submitting volunteer review:', error);
+      toast({
+        title: 'Erro ao enviar avaliação',
+        description: 'Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -479,6 +556,45 @@ export default function VolunteerDashboard() {
                           {match.opportunity.descricao}
                         </p>
                       </CardContent>
+                      {match.status === 'concluido' && (
+                        <CardFooter className="border-t pt-4">
+                          {match.rating_voluntario != null ||
+                            (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
+                            <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
+                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                Sua Avaliação
+                              </p>
+                              {match.rating_voluntario != null && (
+                                <div className="flex items-center gap-1.5">
+                                  <StarRating rating={match.rating_voluntario} size="sm" />
+                                  <span className="text-sm text-muted-foreground">
+                                    {match.rating_voluntario}/5
+                                  </span>
+                                </div>
+                              )}
+                              {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
+                                <p className="text-sm text-foreground/90">
+                                  {match.feedback_voluntario}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex w-full justify-end">
+                              <Button
+                                variant="outline"
+                                className="gap-2"
+                                onClick={() => {
+                                  setEvaluatingMatch(match);
+                                  setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
+                                }}
+                              >
+                                <Star className="h-4 w-4" />
+                                Avaliar Experiência
+                              </Button>
+                            </div>
+                          )}
+                        </CardFooter>
+                      )}
                     </Card>
                   ))}
               </div>
@@ -493,64 +609,146 @@ export default function VolunteerDashboard() {
                 </p>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {matches
-                  .filter((m) => m.status === 'concluido')
-                  .map((match) => (
-                    <Card key={match.id}>
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">{match.opportunity.ong?.nome}</CardTitle>
-                            <CardDescription className="mt-1">{match.opportunity.titulo}</CardDescription>
-                          </div>
-                          {match.rating && (
-                            <div className="flex flex-col items-end">
-                              <StarRating rating={match.rating} size="sm" />
-                              <span className="text-xs text-muted-foreground mt-1">
-                                {match.rating}/5
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {match.feedback_ong ? (
-                          <div className="bg-muted p-4 rounded-lg relative">
-                            <MessageSquare className="h-4 w-4 text-muted-foreground absolute top-4 left-3" />
-                            <p className="text-sm italic text-muted-foreground pl-5">
-                              "{match.feedback_ong}"
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">
-                            Sem comentário em texto.
-                          </p>
-                        )}
-                        <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            <span>{match.horas_validadas || 0} horas validadas</span>
-                          </div>
-                          {match.opportunity.location != null && match.opportunity.location.trim() !== '' ? (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 shrink-0" />
-                              <span>{match.opportunity.location}</span>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 shrink-0" />
-                              <span>Localização não informada</span>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
+              <>
+                {/* Resumo de Competências Reconhecidas */}
+                <div className="mb-8">
+                  <ReviewHighlights
+                    tags={matches
+                      .filter((m) => m.status === 'concluido')
+                      .map((m) => m.tags_ong ?? [])
+                    }
+                    title="Resumo de Competências Reconhecidas"
+                  />
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  {matches
+                    .filter((m) => m.status === 'concluido')
+                    .map((match) => (
+                      <ReviewCard
+                        key={match.id}
+                        reviewer={{
+                          id: match.opportunity.ong.id,
+                          name: match.opportunity.ong.nome,
+                          avatarUrl: null,
+                        }}
+                        rating={match.rating || 0}
+                        date={new Date(match.updated_at).toLocaleDateString('pt-BR', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                        subtitle={match.opportunity.titulo}
+                        comment={match.feedback_ong || undefined}
+                        tags={match.tags_ong}
+                        expandLabel="Ver competências destacadas"
+                      />
+                    ))}
+                </div>
+              </>
+
             )}
           </TabsContent>
 
+          {/* Modal: Avaliar Experiência (voluntário avalia a ONG) */}
+          <Dialog
+            open={!!evaluatingMatch}
+            onOpenChange={(open) => {
+              if (!open) setEvaluatingMatch(null);
+            }}
+          >
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Avaliar Experiência</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                {evaluatingMatch && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="font-medium">{evaluatingMatch.opportunity.ong?.nome}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {evaluatingMatch.opportunity.titulo}
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label>Nota (1 a 5 estrelas)</Label>
+                  <StarRating
+                    rating={volunteerReviewData.rating}
+                    size="lg"
+                    interactive
+                    onChange={(rating) =>
+                      setVolunteerReviewData((prev) => ({ ...prev, rating }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground text-xs">Pontos Fortes da Experiência (opcional)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {ONG_TAGS.map((tag) => {
+                      const selected = volunteerReviewData.tags.includes(tag);
+                      return (
+                        <Button
+                          key={tag}
+                          type="button"
+                          variant={selected ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-8"
+                          onClick={() =>
+                            setVolunteerReviewData((prev) => ({
+                              ...prev,
+                              tags: selected
+                                ? prev.tags.filter((t) => t !== tag)
+                                : [...prev.tags, tag],
+                            }))
+                          }
+                        >
+                          {tag}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Comentário</Label>
+                  <Textarea
+                    placeholder="Conte como foi sua experiência com esta ONG..."
+                    value={volunteerReviewData.feedback}
+                    onChange={(e) =>
+                      setVolunteerReviewData((prev) => ({
+                        ...prev,
+                        feedback: e.target.value,
+                      }))
+                    }
+                    rows={4}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setEvaluatingMatch(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleSubmitVolunteerReview}
+                  disabled={isSubmittingReview}
+                >
+                  {isSubmittingReview ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Enviar Avaliação
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </Tabs >
       </main >
     </div >

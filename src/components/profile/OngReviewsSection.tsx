@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ReviewData, ReviewStats } from '@/hooks/useProfile';
+import type { OngReview, OngReviewStats } from '@/hooks/useOngReviews';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -10,13 +10,13 @@ import { Star, MessageSquare } from 'lucide-react';
 import { ReviewCard } from './ReviewCard';
 import { ReviewHighlights } from './ReviewHighlights';
 
-interface VolunteerReviewsSectionProps {
-  reviews: ReviewData[];
-  stats: ReviewStats;
+interface OngReviewsSectionProps {
+  reviews: OngReview[];
+  stats: OngReviewStats;
   isLoading: boolean;
 }
 
-export function VolunteerReviewsSection({ reviews, stats, isLoading }: VolunteerReviewsSectionProps) {
+export function OngReviewsSection({ reviews, stats, isLoading }: OngReviewsSectionProps) {
   if (isLoading) {
     return (
       <Card>
@@ -27,13 +27,13 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
           <div className="flex gap-8">
             <Skeleton className="h-24 w-24" />
             <div className="flex-1 space-y-2">
-              {[1, 2, 3, 4, 5].map(i => (
+              {[1, 2, 3, 4, 5].map((i) => (
                 <Skeleton key={i} className="h-4 w-full" />
               ))}
             </div>
           </div>
           <div className="space-y-4">
-            {[1, 2].map(i => (
+            {[1, 2].map((i) => (
               <Skeleton key={i} className="h-32 w-full" />
             ))}
           </div>
@@ -47,26 +47,24 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Star className="h-5 w-5 text-warning" />
-          Avaliações e Impacto
+          Avaliações da ONG
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Rating Summary Box */}
         {stats.totalReviews > 0 ? (
           <>
             <div className="flex flex-col md:flex-row gap-6 p-4 bg-muted/50 rounded-lg">
-              {/* Average Rating */}
               <div className="flex flex-col items-center justify-center min-w-[120px]">
                 <div className="text-5xl font-bold text-warning">
                   {stats.avgRating.toFixed(1)}
                 </div>
                 <StarRating rating={Math.round(stats.avgRating)} size="md" />
                 <p className="text-sm text-muted-foreground mt-1">
-                  {stats.totalReviews} {stats.totalReviews === 1 ? 'avaliação' : 'avaliações'}
+                  {stats.totalReviews}{' '}
+                  {stats.totalReviews === 1 ? 'avaliação' : 'avaliações'}
                 </p>
               </div>
 
-              {/* Distribution Bars */}
               <div className="flex-1 space-y-2">
                 {stats.distribution.map(({ stars, count, percentage }) => (
                   <div key={stars} className="flex items-center gap-3">
@@ -88,38 +86,37 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
 
             {/* Highlights - Principais Elogios */}
             <ReviewHighlights
-              tags={reviews.map(r => r.tags_ong ?? [])}
-              title="Principais Competências"
+              tags={reviews.map(r => r.tags_voluntario ?? [])}
+              title="Principais Pontos Fortes"
             />
 
-            {/* Reviews List */}
             <div className="space-y-4">
               <h4 className="font-semibold flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
-                Comentários das ONGs
+                Comentários dos Voluntários
               </h4>
 
-              {reviews.filter(r => r.comment).length > 0 ? (
+              {reviews.filter((r) => r.feedback_voluntario?.trim()).length > 0 ? (
                 reviews
-                  .filter(r => r.comment)
-                  .map(review => (
+                  .filter((r) => r.feedback_voluntario?.trim())
+                  .map((review) => (
                     <ReviewCard
                       key={review.id}
                       reviewer={{
-                        id: review.reviewer.id,
-                        name: review.reviewer.nome,
-                        avatarUrl: review.reviewer.avatar_url,
+                        id: review.voluntario_id,
+                        name: review.voluntario?.nome ?? 'Voluntário',
+                        avatarUrl: review.voluntario?.avatar_url,
                       }}
-                      rating={review.rating}
-                      date={new Date(review.created_at).toLocaleDateString('pt-BR', {
+                      rating={review.rating_voluntario}
+                      date={new Date(review.updated_at).toLocaleDateString('pt-BR', {
                         day: 'numeric',
                         month: 'long',
                         year: 'numeric',
                       })}
-                      subtitle={review.opportunity_title}
-                      comment={review.comment}
-                      tags={review.tags_ong}
-                      expandLabel="Ver competências destacadas"
+                      subtitle={`Participou de: ${review.opportunity?.titulo ?? 'Oportunidade'}`}
+                      comment={review.feedback_voluntario}
+                      tags={review.tags_voluntario}
+                      expandLabel="Ver pontos fortes"
                     />
                   ))
               ) : (
@@ -132,9 +129,9 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
         ) : (
           <div className="text-center py-8 text-muted-foreground">
             <Star className="h-12 w-12 mx-auto mb-3 opacity-30" />
-            <p>Este voluntário ainda não possui avaliações.</p>
+            <p>Esta ONG ainda não possui avaliações.</p>
             <p className="text-sm mt-1">
-              As avaliações aparecem após a conclusão de projetos voluntários.
+              As avaliações aparecem quando voluntários concluem experiências e avaliam a organização.
             </p>
           </div>
         )}

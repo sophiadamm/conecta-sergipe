@@ -23,7 +23,10 @@ export type Database = {
           id: string
           opportunity_id: string
           rating: number | null
+          rating_voluntario: number | null
           status: Database["public"]["Enums"]["match_status"]
+          tags_ong: string[] | null
+          tags_voluntario: string[] | null
           updated_at: string
           voluntario_id: string
         }
@@ -35,7 +38,10 @@ export type Database = {
           id?: string
           opportunity_id: string
           rating?: number | null
+          rating_voluntario?: number | null
           status?: Database["public"]["Enums"]["match_status"]
+          tags_ong?: string[] | null
+          tags_voluntario?: string[] | null
           updated_at?: string
           voluntario_id: string
         }
@@ -47,7 +53,10 @@ export type Database = {
           id?: string
           opportunity_id?: string
           rating?: number | null
+          rating_voluntario?: number | null
           status?: Database["public"]["Enums"]["match_status"]
+          tags_ong?: string[] | null
+          tags_voluntario?: string[] | null
           updated_at?: string
           voluntario_id?: string
         }

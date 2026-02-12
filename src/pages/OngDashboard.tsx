@@ -4,7 +4,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
+import { useOngReviews } from '@/hooks/useOngReviews';
 import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +35,11 @@ import {
   User,
   Mail,
   MapPin,
+  Star,
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import { ReviewCard } from '@/components/profile/ReviewCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { SERGIPE_CITIES } from '@/lib/locations';
+import { VOLUNTEER_TAGS } from '@/lib/feedback-tags';
 
 const opportunitySchema = z.object({
   titulo: z.string().min(3, 'Título deve ter no mínimo 3 caracteres'),
@@ -96,12 +101,14 @@ export default function OngDashboard() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewingMatch, setReviewingMatch] = useState<Match | null>(null);
-  const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0 });
+  const [reviewData, setReviewData] = useState({ feedback: '', rating: 5, horas: 0, tags: [] as string[] });
   const [opportunityToDelete, setOpportunityToDelete] = useState<string | null>(null);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
   const [selectedOpportunityFilter, setSelectedOpportunityFilter] = useState<string>('all');
   const [selectedActiveOpportunityFilter, setSelectedActiveOpportunityFilter] = useState<string>('all');
   const [viewingVolunteer, setViewingVolunteer] = useState<Match['voluntario'] | null>(null);
+
+  const { reviews: ongReviews, avgRating: ongAvgRating, totalCount: ongReviewsCount } = useOngReviews(profile?.id);
 
   const form = useForm<OpportunityFormData>({
     resolver: zodResolver(opportunitySchema),
@@ -270,6 +277,7 @@ export default function OngDashboard() {
           horas_validadas: reviewData.horas,
           feedback_ong: reviewData.feedback,
           rating: reviewData.rating,
+          tags_ong: reviewData.tags.length > 0 ? reviewData.tags : null,
         })
         .eq('id', reviewingMatch.id);
 
@@ -281,7 +289,7 @@ export default function OngDashboard() {
       });
 
       setReviewingMatch(null);
-      setReviewData({ feedback: '', rating: 5, horas: 0 });
+      setReviewData({ feedback: '', rating: 5, horas: 0, tags: [] });
       loadData();
     } catch (error) {
       console.error('Error completing match:', error);
@@ -365,7 +373,7 @@ export default function OngDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -401,6 +409,30 @@ export default function OngDashboard() {
               <div className="text-3xl font-bold">{completedMatches}</div>
             </CardContent>
           </Card>
+
+          <Card className="border-warning/20">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Avaliação Média
+              </CardTitle>
+              <Star className="h-5 w-5 text-warning fill-warning" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold">
+                  {ongReviewsCount === 0 ? '—' : ongAvgRating.toFixed(1)}
+                </span>
+                {ongReviewsCount > 0 && (
+                  <StarRating rating={Math.round(ongAvgRating)} size="sm" />
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {ongReviewsCount === 0
+                  ? 'Nenhuma avaliação ainda'
+                  : `${ongReviewsCount} avaliação${ongReviewsCount !== 1 ? 'ões' : ''} recebida${ongReviewsCount !== 1 ? 's' : ''}`}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="opportunities" className="space-y-6">
@@ -421,6 +453,10 @@ export default function OngDashboard() {
             <TabsTrigger value="active" className="gap-2">
               <Clock className="h-4 w-4" />
               Em Andamento
+            </TabsTrigger>
+            <TabsTrigger value="feedbacks" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              Meus Feedbacks
             </TabsTrigger>
           </TabsList>
 
@@ -659,6 +695,7 @@ export default function OngDashboard() {
                               feedback: '',
                               rating: 5,
                               horas: match.opportunity?.horas_estimadas || 0,
+                              tags: [],
                             });
                           }}
                           className="gap-2"
@@ -669,6 +706,41 @@ export default function OngDashboard() {
                       </CardFooter>
                     </Card>
                   ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="feedbacks" className="space-y-4">
+            {ongReviewsCount === 0 ? (
+              <Card className="p-8 text-center">
+                <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground font-medium">Nenhuma avaliação recebida ainda</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Quando voluntários concluírem experiências e avaliarem sua organização, as notas e comentários aparecerão aqui.
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {ongReviews.map((review) => (
+                  <ReviewCard
+                    key={review.id}
+                    reviewer={{
+                      id: review.voluntario_id,
+                      name: review.voluntario?.nome ?? 'Voluntário',
+                      avatarUrl: review.voluntario?.avatar_url,
+                    }}
+                    rating={review.rating_voluntario}
+                    date={new Date(review.updated_at).toLocaleDateString('pt-BR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                    subtitle={review.opportunity?.titulo ?? 'Oportunidade'}
+                    comment={review.feedback_voluntario}
+                    tags={review.tags_voluntario}
+                    expandLabel="Ver pontos fortes"
+                  />
+                ))}
               </div>
             )}
           </TabsContent>
@@ -831,6 +903,34 @@ export default function OngDashboard() {
                 interactive
                 onChange={(rating) => setReviewData({ ...reviewData, rating })}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-muted-foreground text-xs">Destaques do Voluntário (opcional)</Label>
+              <div className="flex flex-wrap gap-2">
+                {VOLUNTEER_TAGS.map((tag) => {
+                  const selected = reviewData.tags.includes(tag);
+                  return (
+                    <Button
+                      key={tag}
+                      type="button"
+                      variant={selected ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-8"
+                      onClick={() =>
+                        setReviewData({
+                          ...reviewData,
+                          tags: selected
+                            ? reviewData.tags.filter((t) => t !== tag)
+                            : [...reviewData.tags, tag],
+                        })
+                      }
+                    >
+                      {tag}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="space-y-2">

@@ -49,6 +49,7 @@ export interface ReviewData {
   comment: string | null;
   created_at: string;
   opportunity_title: string;
+  tags_ong: string[] | null;
   reviewer: {
     id: string;
     nome: string;
@@ -103,6 +104,25 @@ export function useOngOpportunities(ongId: string | undefined) {
   });
 }
 
+/** Total de oportunidades (ativas + inativas) criadas pela ONG. */
+export function useOngTotalOpportunitiesCount(ongId: string | undefined) {
+  return useQuery({
+    queryKey: ['ong-total-opportunities-count', ongId],
+    queryFn: async () => {
+      if (!ongId) return 0;
+
+      const { count, error } = await supabase
+        .from('opportunities')
+        .select('id', { count: 'exact', head: true })
+        .eq('ong_id', ongId);
+
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!ongId,
+  });
+}
+
 export function useVolunteerCompletedMatches(volunteerId: string | undefined) {
   return useQuery({
     queryKey: ['volunteer-completed-matches', volunteerId],
@@ -147,6 +167,7 @@ export function useVolunteerReviews(volunteerId: string | undefined) {
           id,
           rating,
           feedback_ong,
+          tags_ong,
           updated_at,
           opportunity:opportunities!inner(
             titulo,
@@ -170,6 +191,7 @@ export function useVolunteerReviews(volunteerId: string | undefined) {
         comment: item.feedback_ong,
         created_at: item.updated_at,
         opportunity_title: item.opportunity.titulo,
+        tags_ong: item.tags_ong ?? null,
         reviewer: item.opportunity.ong
       })) as ReviewData[];
     },
