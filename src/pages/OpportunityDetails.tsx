@@ -22,7 +22,6 @@ interface Opportunity {
     horas_estimadas: number;
     skills_required: string | null;
     location: string | null;
-    embedding?: number[] | null;
     // New fields
     causas: string[] | null;
     min_vagas: number | null;

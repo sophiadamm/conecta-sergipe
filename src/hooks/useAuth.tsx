@@ -7,7 +7,6 @@ interface Profile {
   user_id: string;
   nome: string;
   cpf: string | null;
-  cnpj: string | null;
   tipo: 'voluntario' | 'ong';
   bio: string | null;
   skills: string | null;
@@ -112,7 +111,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user_id: data.user.id,
         nome: profileData.nome || '',
         cpf: profileData.cpf || null,
-        cnpj: profileData.cnpj || null,
         tipo: profileData.tipo || 'voluntario',
         bio: profileData.bio || null,
         skills: profileData.skills || null,

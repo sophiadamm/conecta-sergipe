@@ -25,7 +25,6 @@ export interface OpportunityData {
   ativa: boolean;
   created_at: string;
   ong_id: string;
-  embedding?: number[] | null;
 }
 
 export interface CompletedMatch {

@@ -168,12 +168,8 @@ export default function VolunteerDashboard() {
 
       if (recsError) throw recsError;
 
-      // Filtrar recomendações:
-      // 1. Excluir oportunidades para as quais o voluntário já se candidatou
-      // 2. Aplicar threshold mínimo de 0.4 (40% de match) para garantir qualidade
-      const filteredRecs = (recs || []).filter((r: any) => 
-        !appliedOpportunityIds.has(r.id) && (r.score || 0) >= 0.4
-      );
+      // Excluir oportunidades para as quais o voluntário já se candidatou
+      const filteredRecs = (recs || []).filter((r: any) => !appliedOpportunityIds.has(r.id));
 
       setRecommendations(filteredRecs);
 
