@@ -144,6 +144,14 @@ export function OngProfile({ profile }: OngProfileProps) {
                         <Clock className="h-4 w-4" />
                         {opportunity.horas_estimadas}h
                       </div>
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="h-4 w-4 shrink-0" />
+                        <span>
+                          {opportunity.location?.trim()
+                            ? opportunity.location
+                            : 'Localização não informada'}
+                        </span>
+                      </div>
                       {skills.slice(0, 3).map((skill, i) => (
                         <Badge key={i} variant="outline" className="text-xs">
                           {skill}

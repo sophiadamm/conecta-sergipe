@@ -30,7 +30,11 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
+  Loader2,
   Star,
+  MapPin,
+} from 'lucide-react';
+
 } from 'lucide-react';
 import { ReviewCard } from '@/components/profile/ReviewCard';
 import { ReviewHighlights } from '@/components/profile/ReviewHighlights';
@@ -51,6 +55,7 @@ interface Match {
     titulo: string;
     descricao: string;
     horas_estimadas: number;
+    location: string | null;
     ong: {
       id: string;
       nome: string;
@@ -111,7 +116,9 @@ export default function VolunteerDashboard() {
             titulo,
             descricao,
             horas_estimadas,
+            location,
             ong:profiles!opportunities_ong_id_fkey(id, nome)
+
           )
         `)
         .eq('voluntario_id', profile.id)
@@ -525,6 +532,12 @@ export default function VolunteerDashboard() {
                             <CardDescription>
                               {match.opportunity.ong?.nome}
                             </CardDescription>
+                            {match.opportunity.location != null && match.opportunity.location.trim() !== '' && (
+                              <div className="flex items-center gap-1 mt-1 text-sm text-muted-foreground">
+                                <MapPin className="h-4 w-4 shrink-0" />
+                                <span>{match.opportunity.location}</span>
+                              </div>
+                            )}
                           </div>
                           <Badge
                             variant={
@@ -617,7 +630,7 @@ export default function VolunteerDashboard() {
                         reviewer={{
                           id: match.opportunity.ong.id,
                           name: match.opportunity.ong.nome,
-                          avatarUrl: null, // ONGs usually don't have personal avatars here, or we need to fetch it. For now null is fine as per original design.
+                          avatarUrl: null,
                         }}
                         rating={match.rating || 0}
                         date={new Date(match.updated_at).toLocaleDateString('pt-BR', {
@@ -633,6 +646,7 @@ export default function VolunteerDashboard() {
                     ))}
                 </div>
               </>
+
             )}
           </TabsContent>
 
