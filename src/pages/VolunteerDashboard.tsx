@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { generateEmbedding, buildProfileText } from '@/lib/embeddings';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -151,11 +152,19 @@ export default function VolunteerDashboard() {
       // Create Set of ID's processedMatches
       const appliedOpportunityIds = new Set(processedMatches.map((m: any) => m.opportunity_id || m.opportunity?.id));
 
-      // 2. Buscar recomendações via RPC de matching semântico
-      const { data: recs, error: recsError } = await supabase.rpc('match_opportunities', {
+      // 2. Gerar embedding do perfil no frontend e buscar recomendações via RPC
+      const profileText = buildProfileText({ nome: profile.nome, bio: profile.bio, skills: profile.skills });
+      const userEmbedding = await generateEmbedding(profileText);
+
+      const rpcParams: any = {
         p_user_id: profile.id,
         p_limit: 50,
-      });
+      };
+      if (userEmbedding) {
+        rpcParams.p_user_embedding = JSON.stringify(userEmbedding);
+      }
+
+      const { data: recs, error: recsError } = await supabase.rpc('match_opportunities', rpcParams);
 
       if (recsError) throw recsError;
 

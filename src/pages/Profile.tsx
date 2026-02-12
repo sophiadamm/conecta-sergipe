@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { validateCPF } from '@/lib/cpf';
+import { generateEmbedding, buildProfileText } from '@/lib/embeddings';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,18 +108,28 @@ export default function Profile() {
     setIsSubmitting(true);
 
     try {
+      // Generate embedding from profile text
+      const profileText = buildProfileText({ nome: data.nome, bio: data.bio, skills: data.skills });
+      const embedding = await generateEmbedding(profileText);
+
+      const updateData: any = {
+        nome: data.nome,
+        cpf: data.cpf || null,
+        bio: data.bio || null,
+        skills: data.skills || null,
+        locations: data.locations ? data.locations.split(',').map(l => l.trim()).filter(Boolean) : null,
+        linkedin_url: data.linkedin_url || null,
+        github_url: data.github_url || null,
+        experience_level: data.experience_level || 'iniciante',
+      };
+
+      if (embedding) {
+        updateData.embedding = JSON.stringify(embedding);
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          nome: data.nome,
-          cpf: data.cpf || null,
-          bio: data.bio || null,
-          skills: data.skills || null,
-          locations: data.locations ? data.locations.split(',').map(l => l.trim()).filter(Boolean) : null,
-          linkedin_url: data.linkedin_url || null,
-          github_url: data.github_url || null,
-          experience_level: data.experience_level || 'iniciante',
-        })
+        .update(updateData)
         .eq('id', profile.id);
 
       if (error) throw error;
