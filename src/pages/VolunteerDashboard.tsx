@@ -30,12 +30,10 @@ import {
   Sparkles,
   ArrowRight,
   Loader2,
-  Loader2,
   Star,
   MapPin,
 } from 'lucide-react';
 
-} from 'lucide-react';
 import { ReviewCard } from '@/components/profile/ReviewCard';
 import { ReviewHighlights } from '@/components/profile/ReviewHighlights';
 
