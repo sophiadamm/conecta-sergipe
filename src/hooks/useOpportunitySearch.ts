@@ -8,6 +8,13 @@ export interface SearchFilters {
   minHours?: number;
   maxHours?: number;
   location?: string[];
+  // New filters matching opportunity creation form
+  causas?: string[]; // Causa/Área de Atuação
+  minVagas?: number; // Minimum number of available positions
+  formato?: 'presencial' | 'remoto' | 'hibrido' | null; // Format (null = any)
+  nivelExperiencia?: 'iniciante' | 'intermediario' | 'especialista' | null; // Experience level (null = any)
+  emiteCertificado?: 'sim' | 'nao' | null; // Issues certificate (null = indifferent)
+  ofereceTreinamento?: 'sim' | 'nao' | null; // Offers training (null = indifferent)
 }
 
 export interface SearchResult {
@@ -69,17 +76,54 @@ export function useOpportunitySearch(filters: SearchFilters) {
         queryBuilder = queryBuilder.or(`titulo.ilike.%${escaped}%,descricao.ilike.%${escaped}%,skills_required.ilike.%${escaped}%`);
       }
 
+      // Server-side filtering for new columns
+
+      // Causas (Array contains)
+      if (filters.causas && filters.causas.length > 0) {
+        queryBuilder = queryBuilder.contains('causas', filters.causas);
+      }
+
+      // Min Vagas
+      if (typeof filters.minVagas === 'number') {
+        queryBuilder = queryBuilder.gte('min_vagas', filters.minVagas);
+      }
+
+      // Formato
+      if (filters.formato) {
+        queryBuilder = queryBuilder.eq('formato', filters.formato);
+      }
+
+      // Nivel Experiencia
+      if (filters.nivelExperiencia) {
+        queryBuilder = queryBuilder.eq('nivel_experiencia', filters.nivelExperiencia);
+      }
+
+      // Emite Certificado
+      if (filters.emiteCertificado) {
+        queryBuilder = queryBuilder.eq('emite_certificado', filters.emiteCertificado === 'sim');
+      }
+
+      // Oferece Treinamento
+      if (filters.ofereceTreinamento) {
+        queryBuilder = queryBuilder.eq('oferece_treinamento', filters.ofereceTreinamento === 'sim');
+      }
+
       const { data, error } = await queryBuilder.limit(limitFetch);
       if (error) throw error;
       const rows = (data ?? []) as any[];
 
       // Client-side skills filtering - OR logic (at least one skill must match)
       const selectedSkills = (filters.skills || []).map(s => norm(s));
+
       const filtered = rows.filter(r => {
-        if (selectedSkills.length === 0) return true;
-        const oppSkills = parseCsvToArray(r.skills_required ?? null);
-        // Return true if ANY selected skill is in opportunity skills (OR logic)
-        return selectedSkills.some(sk => oppSkills.includes(sk));
+        // Skills filter (existing logic)
+        if (selectedSkills.length > 0) {
+          const oppSkills = parseCsvToArray(r.skills_required ?? null);
+          const hasMatchingSkill = selectedSkills.some(sk => oppSkills.includes(sk));
+          if (!hasMatchingSkill) return false;
+        }
+
+        return true;
       });
 
       // Build compatibility score

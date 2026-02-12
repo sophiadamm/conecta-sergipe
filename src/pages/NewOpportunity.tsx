@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -16,9 +16,24 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Check, ChevronsUpDown } from 'lucide-react';
 import { PREDEFINED_CAUSES } from '@/lib/causes';
 import { PREDEFINED_SKILLS, PREDEFINED_SOFT_SKILLS } from '@/lib/skills';
+import { SERGIPE_CITIES } from '@/lib/locations';
+import { cn } from "@/lib/utils";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
 
 const DAYS_OF_WEEK = [
     { id: 'seg', label: 'Segunda' },
@@ -117,7 +132,11 @@ type OpportunityFormData = z.infer<typeof opportunitySchema>;
 export default function NewOpportunity() {
     const { profile } = useAuth();
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditMode = !!id;
+    const [isLoading, setIsLoading] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [openCityCombobox, setOpenCityCombobox] = useState(false);
 
     const form = useForm<OpportunityFormData>({
         resolver: zodResolver(opportunitySchema),
@@ -148,6 +167,92 @@ export default function NewOpportunity() {
         },
     });
 
+    // Load opportunity data if in edit mode
+    useEffect(() => {
+        if (isEditMode && id) {
+            loadOpportunity(id);
+        } else {
+            // Reset form for create mode
+            form.reset({
+                titulo: '',
+                causas: '',
+                descricao: '',
+                vagas: 1,
+                formato: 'presencial',
+                endereco: '',
+                bairro: '',
+                cidade: '',
+                cargaHorariaSemanal: 4,
+                horarioTipo: 'livre',
+                diasSemana: '',
+                horarioInicio: '',
+                horarioTermino: '',
+                duracaoCompromisso: 'curto',
+                observacoesLogistica: '',
+                hardSkills: '',
+                softSkills: '',
+                nivelExperiencia: 'iniciante',
+                prerequisitos: '',
+                emiteCertificado: 'nao',
+                ofereceTreinamento: 'nao',
+                recursosOferecidos: '',
+            });
+        }
+    }, [id, isEditMode]);
+
+    const loadOpportunity = async (opportunityId: string) => {
+        setIsLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('opportunities')
+                .select('*')
+                .eq('id', opportunityId)
+                .single();
+
+            if (error) throw error;
+
+            if (data) {
+                // Map database fields to form fields
+                // Note: Since we don't have all columns in DB yet, we map what we have
+                // and use defaults for others or try to parse from existing fields if possible
+                form.reset({
+                    titulo: data.titulo,
+                    descricao: data.descricao,
+                    causas: data.causas ? data.causas.join(',') : (data.skills_required || ''),
+                    vagas: data.min_vagas || 1,
+                    formato: (data.formato as any) || 'presencial',
+                    endereco: data.endereco || '',
+                    bairro: data.bairro || '',
+                    cidade: data.cidade || 'Aracaju',
+                    cargaHorariaSemanal: data.horas_estimadas || 4,
+                    horarioTipo: 'livre', // Not yet in DB
+                    diasSemana: '',
+                    horarioInicio: '',
+                    horarioTermino: '',
+                    duracaoCompromisso: 'curto', // Not yet in DB
+                    observacoesLogistica: '',
+                    hardSkills: '',
+                    softSkills: '',
+                    nivelExperiencia: (data.nivel_experiencia as any) || 'iniciante',
+                    prerequisitos: '',
+                    emiteCertificado: data.emite_certificado ? 'sim' : 'nao',
+                    ofereceTreinamento: data.oferece_treinamento ? 'sim' : 'nao',
+                    recursosOferecidos: data.recursos_oferecidos || '',
+                });
+            }
+        } catch (error) {
+            console.error('Error loading opportunity:', error);
+            toast({
+                title: 'Erro ao carregar',
+                description: 'Não foi possível carregar os dados da oportunidade.',
+                variant: 'destructive',
+            });
+            navigate('/ong');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // Watch fields for conditional rendering
     const formato = form.watch('formato');
     const horarioTipo = form.watch('horarioTipo');
@@ -165,38 +270,87 @@ export default function NewOpportunity() {
         setIsSubmitting(true);
 
         try {
-            // For now, we'll store the data in a format compatible with the existing schema
-            // The 'causas' field will be stored temporarily in 'skills_required' until the schema is updated
-            const { error } = await supabase.from('opportunities').insert({
-                ong_id: profile.id,
-                titulo: data.titulo,
-                descricao: data.descricao,
-                skills_required: data.causas, // Temporarily storing causes here
-                horas_estimadas: 4, // Default value, can be made configurable later
-                location: profile.locations?.[0] || 'Aracaju', // Default location
-                ativa: true,
-                // Note: 'vagas' field will need to be added to the database schema
-            });
+            if (isEditMode && id) {
+                // UPDATE existing opportunity
+                const { error } = await supabase
+                    .from('opportunities')
+                    .update({
+                        titulo: data.titulo,
+                        descricao: data.descricao,
+                        skills_required: data.causas, // Keep for backward compatibility if needed, or remove
+                        horas_estimadas: data.cargaHorariaSemanal,
+                        location: data.cidade || profile?.locations?.[0] || 'Aracaju', // Keep for backward compatibility
+                        // New fields
+                        causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
+                        min_vagas: data.vagas,
+                        formato: data.formato,
+                        nivel_experiencia: data.nivelExperiencia,
+                        emite_certificado: data.emiteCertificado === 'sim',
+                        oferece_treinamento: data.ofereceTreinamento === 'sim',
+                        recursos_oferecidos: data.recursosOferecidos,
+                        endereco: data.endereco,
+                        bairro: data.bairro,
+                        cidade: data.cidade,
+                    })
+                    .eq('id', id);
 
-            if (error) throw error;
+                if (error) throw error;
 
-            toast({
-                title: 'Oportunidade criada!',
-                description: 'Voluntários poderão se candidatar agora.',
-            });
+                toast({
+                    title: 'Oportunidade atualizada!',
+                    description: 'As alterações foram salvas com sucesso.',
+                });
+            } else {
+                // CREATE new opportunity
+                const { error } = await supabase.from('opportunities').insert({
+                    ong_id: profile.id,
+                    titulo: data.titulo,
+                    descricao: data.descricao,
+                    skills_required: data.causas,
+                    horas_estimadas: data.cargaHorariaSemanal,
+                    location: data.endereco || profile?.locations?.[0] || 'Aracaju',
+                    ativa: true,
+                    // New fields
+                    causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
+                    min_vagas: data.vagas,
+                    formato: data.formato,
+                    nivel_experiencia: data.nivelExperiencia,
+                    emite_certificado: data.emiteCertificado === 'sim',
+                    oferece_treinamento: data.ofereceTreinamento === 'sim',
+                    recursos_oferecidos: data.recursosOferecidos,
+                    endereco: data.endereco,
+                    bairro: data.bairro,
+                    cidade: data.cidade,
+                });
+
+                if (error) throw error;
+
+                toast({
+                    title: 'Oportunidade criada!',
+                    description: 'Voluntários poderão se candidatar agora.',
+                });
+            }
 
             navigate('/ong');
         } catch (error) {
-            console.error('Error creating opportunity:', error);
+            console.error('Error saving opportunity:', error);
             toast({
-                title: 'Erro ao criar oportunidade',
-                description: 'Ocorreu um erro ao criar a oportunidade. Tente novamente.',
+                title: isEditMode ? 'Erro ao atualizar' : 'Erro ao criar',
+                description: 'Ocorreu um erro ao salvar a oportunidade. Tente novamente.',
                 variant: 'destructive',
             });
         } finally {
             setIsSubmitting(false);
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-background">
@@ -214,9 +368,13 @@ export default function NewOpportunity() {
                         Voltar
                     </Button>
 
-                    <h1 className="text-3xl font-bold mb-2">Nova Oportunidade</h1>
+                    <h1 className="text-3xl font-bold mb-2">
+                        {isEditMode ? 'Editar Oportunidade' : 'Nova Oportunidade'}
+                    </h1>
                     <p className="text-muted-foreground">
-                        Preencha os campos abaixo para criar uma nova oportunidade de voluntariado.
+                        {isEditMode
+                            ? 'Atualize as informações da oportunidade abaixo.'
+                            : 'Preencha os campos abaixo para criar uma nova oportunidade de voluntariado.'}
                     </p>
                 </div>
 
@@ -395,15 +553,65 @@ export default function NewOpportunity() {
                                             />
                                         </div>
 
-                                        <div className="space-y-2">
+                                        <div className="flex flex-col space-y-2">
                                             <Label htmlFor="cidade">
-                                                Cidade <span className="text-destructive">*</span>
+                                                Cidade (SE) <span className="text-destructive">*</span>
                                             </Label>
-                                            <Input
-                                                id="cidade"
-                                                placeholder="Nome da cidade"
-                                                {...form.register('cidade')}
-                                                className="transition-all focus:ring-2 focus:ring-primary"
+                                            <Controller
+                                                name="cidade"
+                                                control={form.control}
+                                                render={({ field }) => (
+                                                    <Popover open={openCityCombobox} onOpenChange={setOpenCityCombobox}>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                role="combobox"
+                                                                aria-expanded={openCityCombobox}
+                                                                className={cn(
+                                                                    "w-full justify-between",
+                                                                    !field.value && "text-muted-foreground"
+                                                                )}
+                                                            >
+                                                                {field.value
+                                                                    ? SERGIPE_CITIES.find(
+                                                                        (city) => city === field.value
+                                                                    )
+                                                                    : "Selecione uma cidade..."}
+                                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                            <Command>
+                                                                <CommandInput placeholder="Buscar cidade..." />
+                                                                <CommandList>
+                                                                    <CommandEmpty>Cidade não encontrada.</CommandEmpty>
+                                                                    <CommandGroup>
+                                                                        {SERGIPE_CITIES.map((city) => (
+                                                                            <CommandItem
+                                                                                key={city}
+                                                                                value={city}
+                                                                                onSelect={() => {
+                                                                                    form.setValue("cidade", city, { shouldValidate: true });
+                                                                                    setOpenCityCombobox(false);
+                                                                                }}
+                                                                            >
+                                                                                <Check
+                                                                                    className={cn(
+                                                                                        "mr-2 h-4 w-4",
+                                                                                        city === field.value
+                                                                                            ? "opacity-100"
+                                                                                            : "opacity-0"
+                                                                                    )}
+                                                                                />
+                                                                                {city}
+                                                                            </CommandItem>
+                                                                        ))}
+                                                                    </CommandGroup>
+                                                                </CommandList>
+                                                            </Command>
+                                                        </PopoverContent>
+                                                    </Popover>
+                                                )}
                                             />
                                         </div>
                                     </div>
@@ -843,10 +1051,10 @@ export default function NewOpportunity() {
                                     {isSubmitting ? (
                                         <>
                                             <Loader2 className="h-4 w-4 animate-spin" />
-                                            Publicando...
+                                            {isEditMode ? 'Salvando...' : 'Publicando...'}
                                         </>
                                     ) : (
-                                        'Publicar Oportunidade'
+                                        isEditMode ? 'Salvar Alterações' : 'Publicar Oportunidade'
                                     )}
                                 </Button>
                             </div>
