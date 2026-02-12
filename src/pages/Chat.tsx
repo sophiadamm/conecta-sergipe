@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { Search, Send, ArrowLeft, User } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface Profile {
     id: string;
@@ -43,6 +42,7 @@ interface Conversation {
 export default function Chat() {
     const { profile } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -50,7 +50,7 @@ export default function Chat() {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
-    const [creatingConversation, setCreatingConversation] = useState(false);
+    const [startingChat, setStartingChat] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [showMobileConversation, setShowMobileConversation] = useState(false);
 
@@ -61,42 +61,54 @@ export default function Chat() {
         }
     }, [profile]);
 
-    // Handle receiverId from URL parameter (Deep Linking)
+    // Handle deep linking (newChatWith, receiverId, etc.)
     useEffect(() => {
         const handleDeepLink = async () => {
-            const params = new URLSearchParams(window.location.search);
-            const receiverId = params.get('receiverId');
+            // Priority: newChatWith -> receiverId -> userId -> ngoId
+            const targetId = searchParams.get('newChatWith') ||
+                searchParams.get('receiverId') ||
+                searchParams.get('userId') ||
+                searchParams.get('ngoId');
 
-            if (!receiverId || !profile) return;
+            if (!targetId || !profile) return;
 
             // Wait for conversations to load
             if (loading) return;
 
-            // CASE A: Check if conversation already exists in loaded conversations
+            // 1. Check if conversation already exists in loaded conversations
             const existingConversation = conversations.find(
-                c => c.otherUser.id === receiverId
+                c => c.otherUser.id === targetId
             );
 
             if (existingConversation) {
-                // Open existing conversation immediately
-                setSelectedConversation(existingConversation);
-                setShowMobileConversation(true);
+                // Determine if we should switch (only if not already selected)
+                if (selectedConversation?.id !== existingConversation.id) {
+                    setSelectedConversation(existingConversation);
+                    setShowMobileConversation(true);
+                }
             } else {
-                // CASE B: New contact - Create temporary conversation
-                await createNewConversation(receiverId);
+                // 2. New contact - Initialize temporary chat
+                await initializeTemporaryChat(targetId);
             }
 
-            // Clean URL after processing
-            navigate('/chat', { replace: true });
+            // Cleanup URL params without reloading page
+            if (window.location.search) {
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, '', newUrl);
+            }
         };
 
         handleDeepLink();
-    }, [conversations, profile, loading]);
+    }, [conversations, profile, loading, searchParams]);
 
     useEffect(() => {
         if (selectedConversation) {
-            loadMessages(selectedConversation.id);
-            markMessagesAsRead(selectedConversation.id);
+            if (selectedConversation.id !== 'temp') {
+                loadMessages(selectedConversation.id);
+                markMessagesAsRead(selectedConversation.id);
+            } else {
+                setMessages([]); // Empty messages for new temporary chat
+            }
         }
     }, [selectedConversation]);
 
@@ -188,14 +200,17 @@ export default function Chat() {
     const markMessagesAsRead = async (conversationId: string) => {
         if (!profile) return;
 
-        await supabase
-            .from('messages')
-            .update({ read: true })
-            .eq('conversation_id', conversationId)
-            .neq('sender_id', profile.id)
-            .eq('read', false);
+        // Use RPC for better performance and consistency
+        const { error } = await supabase.rpc('mark_messages_as_read', {
+            p_conversation_id: conversationId
+        });
 
-        // Update local state
+        if (error) {
+            console.error('Error marking messages as read:', error);
+            return;
+        }
+
+        // Update local state - zero out unread count for this conversation
         setConversations(prev =>
             prev.map(c =>
                 c.id === conversationId ? { ...c, unreadCount: 0 } : c
@@ -219,7 +234,8 @@ export default function Chat() {
                     const newMsg = payload.new as Message;
 
                     // Update messages if in active conversation
-                    if (selectedConversation?.id === newMsg.conversation_id) {
+                    // For temp conversation, we will handle it after creation
+                    if (selectedConversation?.id === newMsg.conversation_id && selectedConversation.id !== 'temp') {
                         setMessages(prev => [...prev, newMsg]);
                         markMessagesAsRead(newMsg.conversation_id);
                     }
@@ -235,106 +251,32 @@ export default function Chat() {
         };
     };
 
-    const sendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!newMessage.trim() || !selectedConversation || !profile) return;
+    const initializeTemporaryChat = async (targetId: string) => {
+        if (startingChat || !profile) return;
+        setStartingChat(true);
 
-        setSending(true);
         try {
-            const { error } = await supabase.from('messages').insert({
-                conversation_id: selectedConversation.id,
-                sender_id: profile.id,
-                content: newMessage.trim(),
-            });
-
-            if (error) throw error;
-
-            setNewMessage('');
-        } catch (error) {
-            console.error('Error sending message:', error);
-            toast({
-                title: 'Erro ao enviar mensagem',
-                description: 'Tente novamente.',
-                variant: 'destructive',
-            });
-        } finally {
-            setSending(false);
-        }
-    };
-
-    const createNewConversation = async (receiverId: string) => {
-        if (!profile) return;
-
-        console.log('[Chat] Creating new conversation with receiverId:', receiverId);
-        setCreatingConversation(true);
-        try {
-            // Fetch contact profile
-            console.log('[Chat] Fetching contact profile...');
-            const { data: contactProfile, error: profileError } = await supabase
+            // Fetch target user profile
+            const { data: contactProfile, error } = await supabase
                 .from('profiles')
                 .select('id, nome, avatar_url, tipo')
-                .eq('id', receiverId)
+                .eq('id', targetId)
                 .single();
 
-            if (profileError) {
-                console.error('[Chat] Error fetching profile:', profileError);
-                throw new Error(`Erro ao buscar perfil: ${profileError.message}`);
+            if (error || !contactProfile) {
+                console.error('Profile not found:', error);
+                toast({
+                    title: 'Usuário não encontrado',
+                    variant: 'destructive',
+                });
+                return;
             }
 
-            if (!contactProfile) {
-                throw new Error('Perfil não encontrado');
-            }
-
-            console.log('[Chat] Contact profile loaded:', contactProfile);
-
-            // Check if conversation already exists in database
-            console.log('[Chat] Checking for existing conversation...');
-            const { data: existingConvo, error: convoCheckError } = await supabase
-                .from('conversations')
-                .select('*')
-                .or(`and(participant_1.eq.${profile.id},participant_2.eq.${receiverId}),and(participant_1.eq.${receiverId},participant_2.eq.${profile.id})`)
-                .maybeSingle();
-
-            if (convoCheckError) {
-                console.error('[Chat] Error checking conversation:', convoCheckError);
-                throw new Error(`Erro ao verificar conversa: ${convoCheckError.message}`);
-            }
-
-            let conversationId: string;
-
-            if (existingConvo) {
-                console.log('[Chat] Found existing conversation:', existingConvo.id);
-                conversationId = existingConvo.id;
-            } else {
-                // Create new conversation in database
-                console.log('[Chat] Creating new conversation in database...');
-                const { data: newConvo, error: convoError } = await supabase
-                    .from('conversations')
-                    .insert({
-                        participant_1: profile.id,
-                        participant_2: receiverId,
-                    })
-                    .select()
-                    .single();
-
-                if (convoError) {
-                    console.error('[Chat] Error creating conversation:', convoError);
-                    throw new Error(`Erro ao criar conversa: ${convoError.message}`);
-                }
-
-                if (!newConvo) {
-                    throw new Error('Falha ao criar conversa');
-                }
-
-                console.log('[Chat] New conversation created:', newConvo.id);
-                conversationId = newConvo.id;
-            }
-
-            // Create conversation object for immediate display
+            // Create temporary conversation object
             const tempConversation: Conversation = {
-                id: conversationId,
+                id: 'temp',
                 participant_1: profile.id,
-                participant_2: receiverId,
+                participant_2: targetId,
                 last_message_at: new Date().toISOString(),
                 otherUser: {
                     id: contactProfile.id,
@@ -345,24 +287,105 @@ export default function Chat() {
                 unreadCount: 0,
             };
 
-            // Open conversation immediately
-            console.log('[Chat] Opening conversation...');
             setSelectedConversation(tempConversation);
             setShowMobileConversation(true);
-            setMessages([]);
 
-            // Reload conversations to sync with database
-            loadConversations();
-            console.log('[Chat] Conversation successfully initialized');
+        } catch (error) {
+            console.error('Error initializing chat:', error);
+        } finally {
+            setStartingChat(false);
+        }
+    };
+
+    const sendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const messageContent = newMessage.trim();
+        if (!messageContent || !selectedConversation || !profile) return;
+
+        const tempId = `temp-${Date.now()}`;
+        const recipientId = selectedConversation.otherUser.id;
+
+        // Optimistic Update
+        const optimisticMessage: Message = {
+            id: tempId,
+            conversation_id: selectedConversation.id,
+            sender_id: profile.id,
+            content: messageContent,
+            read: false,
+            created_at: new Date().toISOString(),
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+        setNewMessage('');
+        setSending(true);
+
+        try {
+            // Use Secure RPC to send message (Bypasses RLS issues)
+            const { data, error } = await supabase.rpc('send_message_secure', {
+                p_recipient_id: recipientId,
+                p_content: messageContent,
+            });
+
+            if (error) throw error;
+
+            const response = data as any;
+            const newConversationId = response.conversation_id;
+            const newMessageId = response.message_id;
+            const newMessageCreatedAt = response.created_at;
+
+            const realMessage: Message = {
+                id: newMessageId,
+                conversation_id: newConversationId,
+                sender_id: profile.id,
+                content: messageContent,
+                read: false,
+                created_at: newMessageCreatedAt
+            };
+
+            // 3. Update State with Real Data
+            setMessages(prev => prev.map(msg =>
+                msg.id === tempId ? realMessage : msg
+            ));
+
+            // If it was a temporary conversation, update it to real
+            if (selectedConversation.id === 'temp') {
+                const updatedConversation = {
+                    ...selectedConversation,
+                    id: newConversationId,
+                    last_message_at: newMessageCreatedAt,
+                    lastMessage: realMessage
+                };
+
+                setSelectedConversation(updatedConversation);
+
+                // Add to conversations list immediately
+                setConversations(prev => [updatedConversation, ...prev]);
+            } else {
+                // Update existing conversation in list
+                setConversations(prev => {
+                    const filtered = prev.filter(c => c.id !== newConversationId); // Ensure we use new ID if it changed
+                    const updated = {
+                        ...selectedConversation,
+                        id: newConversationId, // Ensure ID is correct
+                        last_message_at: newMessageCreatedAt,
+                        lastMessage: realMessage
+                    };
+                    return [updated, ...filtered];
+                });
+            }
+
         } catch (error: any) {
-            console.error('[Chat] Error creating conversation:', error);
+            console.error('Error sending message:', error);
+            // Revert optimistic update
+            setMessages(prev => prev.filter(msg => msg.id !== tempId));
+            setNewMessage(messageContent); // Put text back
             toast({
-                title: 'Erro ao iniciar conversa',
-                description: error.message || 'Tente novamente mais tarde.',
+                title: 'Erro ao enviar mensagem',
+                description: error.message || error.details || 'Ocorreu um erro desconhecido.',
                 variant: 'destructive',
             });
         } finally {
-            setCreatingConversation(false);
+            setSending(false);
         }
     };
 
@@ -585,15 +608,15 @@ export default function Chat() {
                                 </div>
                             </form>
                         </>
-                    ) : creatingConversation ? (
-                        /* Loading State - Creating Conversation */
+                    ) : startingChat ? (
+                        /* Loading State - Starting Conversation */
                         <div className="flex-1 flex items-center justify-center p-8">
                             <div className="text-center max-w-sm space-y-4">
                                 <Skeleton className="mx-auto h-16 w-16 rounded-full" />
                                 <Skeleton className="h-6 w-48 mx-auto" />
                                 <Skeleton className="h-4 w-64 mx-auto" />
                                 <p className="text-sm text-muted-foreground mt-4">
-                                    Iniciando conversa...
+                                    Iniciando troca de mensagens...
                                 </p>
                             </div>
                         </div>
