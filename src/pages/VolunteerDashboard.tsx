@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { getRecommendations, RecommendedOpportunity } from '@/lib/recommendation';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -67,7 +66,7 @@ export default function VolunteerDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get('tab') || 'recommendations';
 
-  const [recommendations, setRecommendations] = useState<RecommendedOpportunity[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
@@ -139,38 +138,16 @@ export default function VolunteerDashboard() {
       // Create Set of ID's processedMatches
       const appliedOpportunityIds = new Set(processedMatches.map((m: any) => m.opportunity_id || m.opportunity?.id));
 
-      // 2. Load opportunities for recommendations
-      const { data: opportunities, error: oppError } = await supabase
-        .from('opportunities')
-        .select(`
-          id,
-          titulo,
-          descricao,
-          skills_required,
-          horas_estimadas,
-          location,
-          ong:profiles!opportunities_ong_id_fkey(nome)
-        `)
-        .eq('ativa', true);
+      // 2. Buscar recomendações via RPC de matching semântico
+      const { data: recs, error: recsError } = await supabase.rpc('match_opportunities', {
+        p_user_id: profile.id,
+        p_limit: 50,
+      });
 
-      if (oppError) throw oppError;
+      if (recsError) throw recsError;
 
-      // Get recommendations
-      const formattedOpps = (opportunities || []).map((opp: any) => ({
-        ...opp,
-        ong_nome: opp.ong?.nome,
-      }));
-
-      const recs = getRecommendations(
-        { bio: profile.bio, skills: profile.skills, locations: profile.locations },
-        formattedOpps,
-        50 // Get more candidates before filtering
-      );
-
-      // Filter by compatibility (>= 40%) AND exclude applied opportunities
-      const filteredRecs = recs.filter(r =>
-        r.score >= 0.4 && !appliedOpportunityIds.has(r.id)
-      );
+      // Excluir oportunidades para as quais o voluntário já se candidatou
+      const filteredRecs = (recs || []).filter((r: any) => !appliedOpportunityIds.has(r.id));
 
       setRecommendations(filteredRecs);
 
