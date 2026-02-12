@@ -56,7 +56,7 @@ BEGIN
        'Nova avaliação de voluntário! ⭐',
        'O voluntário ' || v_voluntario_nome || ' avaliou a experiência em "' || v_opportunity_title || '".',
        'ong_reviewed',
-       '/ong-dashboard?tab=reviews'
+       '/ong-dashboard?tab=feedbacks'
      );
   END IF;
 

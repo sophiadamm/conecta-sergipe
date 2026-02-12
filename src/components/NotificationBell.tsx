@@ -18,10 +18,18 @@ export function NotificationBell() {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
 
-    const handleNotificationClick = async (notificationId: string, link: string) => {
+    const handleNotificationClick = async (notificationId: string) => {
         await markAsRead(notificationId);
-        setOpen(false);
-        navigate(link);
+        // Não fechamos mais o popover automaticamente para permitir interação contínua se o usuário quiser ler várias
+        // Mas se o objetivo for apenas marcar como lida e não navegar, talvez nem precise fechar?
+        // O user pediu: "O usuário clica na notificação, ela é marcada como lida... mas ele permanece na mesma página"
+        // Vou manter setOpen(false)?
+        // Se eu não fechar, ele pode clicar em várias.
+        // Se eu fechar, parece que a notificação "fez algo".
+        // O user não especificou sobre fechar o popover. O padrão geralmente é NÃO fechar se não navegar.
+        // Vou optar por NÃO fechar o popover ao clicar, apenas marcar como lida e atualizar o visual.
+        // Isso dá um feedback melhor de "li isso".
+        // Mas espere... se eu clico, ela marca como lida e muda o estilo. O popover fica aberto. Isso é bom.
     };
 
     const getNotificationIcon = (type: string) => {
@@ -113,10 +121,13 @@ export function NotificationBell() {
                                 <div
                                     key={notification.id}
                                     className={cn(
-                                        "group relative px-4 py-3 transition-all hover:bg-muted/50 cursor-pointer",
+                                        "group relative px-4 py-3 transition-all hover:bg-muted/50 cursor-default",
                                         !notification.is_read && "bg-primary/5 border-l-2 border-l-primary"
                                     )}
-                                    onClick={() => handleNotificationClick(notification.id, notification.link)}
+                                    // onClick={() => handleNotificationClick(notification.id)} -- vou deixar sem onClick no container inteiro para evitar conflitos?
+                                    // Não, o user quer que "Ao clicar ... dispara a função para marcar como lida".
+                                    // Então deve ter onClick.
+                                    onClick={() => handleNotificationClick(notification.id)}
                                 >
                                     {/* Badge de não lida */}
                                     {!notification.is_read && (

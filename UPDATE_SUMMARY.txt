@@ -1,68 +1,56 @@
-╔═══════════════════════════════════════════════════════════════════╗
-║                                                                   ║
-║  ⭐ ATUALIZAÇÃO: NOTIFICAÇÕES DE AVALIAÇÕES IMPLEMENTADAS      ║
-║                                                                   ║
-╚═══════════════════════════════════════════════════════════════════╝
+[UPDATE SUMMARY - 2026-02-12 04:30] NOTIFICATION NAVIGATION REFACTOR
 
-Sophia, o sistema foi expandido conforme solicitado!
+1. OVERVIEW
+   This update refactors the notification navigation system to seamlessly direct users to the 
+   appropriate tab within their dashboards upon clicking a notification. It specifically addresses 
+   review notifications for both Volunteers and ONGs.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 O QUE HÁ DE NOVO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. KEY CHANGES
+   
+   A. Dashboard Navigation Logic:
+      - [VolunteerDashboard.tsx] updated to use `useSearchParams` from `react-router-dom`.
+      - Tabs now sync with the `?tab=` URL parameter.
+      - Default tab behavior preserved if no parameter is present.
+      - Clicking a notification with `?tab=feedbacks` now correctly activates the Feedbacks tab.
 
-✅ Notificações Bilaterais de Feedback
-   • Quando a ONG avalia o Voluntário → Voluntário recebe notificação
-   • Quando o Voluntário avalia a ONG → ONG recebe notificação
+   B. Notification Links (SQL):
+      - Updated `notify_reviews` function in migration scripts.
+      - Changed ONG review notification link from `/ong-dashboard?tab=reviews` to `/ong-dashboard?tab=feedbacks` 
+        to match the existing tab identifier in the ONG dashboard component.
+      - Volunteer review notification link confirmed as `/dashboard?tab=feedbacks`.
 
-✅ Ícone Personalizado
-   • Ícone ⭐ (estrela/troféu) para destacar avaliações
-   • Diferente dos ícones padrão (🔔, 👋, 🎉)
+   C. Consistency:
+      - Ensured that notification types `volunteer_reviewed` and `ong_reviewed` point to valid routes.
+      - Verified that `OngDashboard.tsx` correctly handles the `tab` query parameter.
 
-✅ Lógica Inteligente de Disparo
-   • Trigger configurado para disparar APENAS na primeira avaliação
-   • Evita spam se o usuário editar o feedback depois
-   • Detecta preenchimento de 'rating' ou 'feedback'
+3. TESTING INSTRUCTIONS
+   
+   1. Run SQL Migration:
+      - Execute `setup_notifications.sql` in Supabase SQL Editor to update the trigger function with correct links.
+   
+   2. Test Volunteer Flow:
+      - Log in as an ONG.
+      - Go to "Em Andamento" tab.
+      - Click "Concluir e Avaliar" on a match.
+      - Log in as the Volunteer.
+      - Check the notification bell.
+      - Click the "Nova avaliação recebida! ⭐" notification.
+      - Verify you are redirected to `/dashboard?tab=feedbacks` and the "Meus Feedbacks" tab is active.
 
-✅ Redirecionamento Contextual
-   • Link direto para a aba de feedbacks (/dashboard?tab=feedbacks)
+   3. Test ONG Flow:
+      - Log in as a Volunteer.
+      - Go to "Minhas Candidaturas" (concluded match).
+      - Click "Avaliar Experiência".
+      - Log in as the ONG.
+      - Check the notification bell.
+      - Click the "Nova avaliação de voluntário! ⭐" notification.
+      - Verify you are redirected to `/ong-dashboard?tab=feedbacks` and the "Meus Feedbacks" tab is active.
 
+4. FILES MODIFIED
+   - src/pages/VolunteerDashboard.tsx (Added useSearchParams logic)
+   - setup_notifications.sql (Corrected link to ?tab=feedbacks)
+   - supabase/migrations/20260212010000_add_review_notifications.sql (Corrected link to ?tab=feedbacks)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 COMO ATUALIZAR (1 PASSO)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Você já tem o setup quase pronto. Apenas atualize o banco de dados:
-
-1. Abra o arquivo: setup_notifications.sql
-   (Ele já contém a NOVA lógica de avaliações)
-
-2. No Supabase Dashboard > SQL Editor:
-   COPIE, COLE e EXECUTE o conteúdo do arquivo setup_notifications.sql
-
-3. PRONTO!
-   Não precisa habilitar Realtime de novo se já fez.
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🧪 COMO TESTAR O NOVO FLUXO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-1. Login como ONG
-2. Vá em Dashboard > Gerenciar Candidaturas
-3. Avalie um voluntário (dê uma nota/feedback)
-4. Logout
-5. Login como VOLUNTÁRIO (o que foi avaliado)
-6. Veja o sino com o ícone ⭐ e a mensagem!
-
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📁 ARQUIVOS ATUALIZADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔧 setup_notifications.sql (Lógica de trigger adicionada)
-🔧 src/components/NotificationBell.tsx (Ícones adicionados)
-🔧 NOTIFICATIONS_README.md (Documentação expandida)
-🔧 QUICK_START_NOTIFICATIONS.md (Guia atualizado)
-
-
-Desfrute do novo sistema de engajamento! ⭐
+5. NEXT STEPS
+   - Monitor user feedback for any navigation edge cases.
+   - Consider adding a "mark as read" visual indicator on the specific review item if needed in future.
