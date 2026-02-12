@@ -32,10 +32,21 @@ import {
   Loader2,
   Star,
   MapPin,
+  Trash2,
 } from 'lucide-react';
 
 import { ReviewCard } from '@/components/profile/ReviewCard';
 import { ReviewHighlights } from '@/components/profile/ReviewHighlights';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Match {
   id: string;
@@ -75,6 +86,8 @@ export default function VolunteerDashboard() {
   const [evaluatingMatch, setEvaluatingMatch] = useState<Match | null>(null);
   const [volunteerReviewData, setVolunteerReviewData] = useState({ rating: 5, feedback: '', tags: [] as string[] });
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [matchToCancel, setMatchToCancel] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -281,6 +294,42 @@ export default function VolunteerDashboard() {
       });
     } finally {
       setIsSubmittingReview(false);
+    }
+  };
+
+  const handleCancelApplication = (matchId: string) => {
+    setMatchToCancel(matchId);
+  };
+
+  const confirmCancelApplication = async () => {
+    if (!matchToCancel) return;
+
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase
+        .from('matches')
+        .delete()
+        .eq('id', matchToCancel);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Candidatura cancelada',
+        description: 'Sua candidatura foi removida com sucesso.',
+      });
+
+      // Update local state by removing the cancelled match
+      setMatches((prev) => prev.filter((m) => m.id !== matchToCancel));
+    } catch (error) {
+      console.error('Error canceling application:', error);
+      toast({
+        title: 'Erro ao cancelar',
+        description: 'Não foi possível cancelar a candidatura. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCancelling(false);
+      setMatchToCancel(null);
     }
   };
 
@@ -562,40 +611,55 @@ export default function VolunteerDashboard() {
                           {match.opportunity.descricao}
                         </p>
                       </CardContent>
-                      {match.status === 'concluido' && (
+                      {(match.status === 'concluido' || match.status === 'pendente') && (
                         <CardFooter className="border-t pt-4">
-                          {match.rating_voluntario != null ||
-                            (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
-                            <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
-                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                Sua Avaliação
-                              </p>
-                              {match.rating_voluntario != null && (
-                                <div className="flex items-center gap-1.5">
-                                  <StarRating rating={match.rating_voluntario} size="sm" />
-                                  <span className="text-sm text-muted-foreground">
-                                    {match.rating_voluntario}/5
-                                  </span>
-                                </div>
-                              )}
-                              {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
-                                <p className="text-sm text-foreground/90">
-                                  {match.feedback_voluntario}
+                          {match.status === 'concluido' && (
+                            match.rating_voluntario != null ||
+                              (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
+                              <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
+                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                  Sua Avaliação
                                 </p>
-                              )}
-                            </div>
-                          ) : (
+                                {match.rating_voluntario != null && (
+                                  <div className="flex items-center gap-1.5">
+                                    <StarRating rating={match.rating_voluntario} size="sm" />
+                                    <span className="text-sm text-muted-foreground">
+                                      {match.rating_voluntario}/5
+                                    </span>
+                                  </div>
+                                )}
+                                {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
+                                  <p className="text-sm text-foreground/90">
+                                    {match.feedback_voluntario}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="flex w-full justify-end">
+                                <Button
+                                  variant="outline"
+                                  className="gap-2"
+                                  onClick={() => {
+                                    setEvaluatingMatch(match);
+                                    setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
+                                  }}
+                                >
+                                  <Star className="h-4 w-4" />
+                                  Avaliar Experiência
+                                </Button>
+                              </div>
+                            )
+                          )}
+
+                          {match.status === 'pendente' && (
                             <div className="flex w-full justify-end">
                               <Button
                                 variant="outline"
-                                className="gap-2"
-                                onClick={() => {
-                                  setEvaluatingMatch(match);
-                                  setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
-                                }}
+                                className="gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
+                                onClick={() => handleCancelApplication(match.id)}
                               >
-                                <Star className="h-4 w-4" />
-                                Avaliar Experiência
+                                <Trash2 className="h-4 w-4" />
+                                Cancelar Candidatura
                               </Button>
                             </div>
                           )}
@@ -755,6 +819,41 @@ export default function VolunteerDashboard() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Alerta de Confirmação de Cancelamento */}
+          <AlertDialog open={!!matchToCancel} onOpenChange={(open) => !open && setMatchToCancel(null)}>
+            <AlertDialogContent className="sm:max-w-md">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                  <Trash2 className="h-5 w-5" />
+                  Cancelar Candidatura?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Você tem certeza que deseja cancelar sua candidatura para esta vaga? Essa ação não pode ser desfeita e você perderá sua posição na lista.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isCancelling}>Manter Candidatura</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    confirmCancelApplication();
+                  }}
+                  className="bg-destructive hover:bg-destructive/90 text-white"
+                  disabled={isCancelling}
+                >
+                  {isCancelling ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Cancelando...
+                    </>
+                  ) : (
+                    'Sim, Cancelar'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Tabs >
       </main >
     </div >
