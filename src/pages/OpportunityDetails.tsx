@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import {
     Clock, Building, ArrowLeft, Loader2, CheckCircle2, MapPin,
     Calendar, Briefcase, Award, GraduationCap, Users, Gift,
-    Home, Wifi, Blend, Check, X
+    Home, Wifi, Blend, Check, X, MessageCircle
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -515,6 +515,16 @@ export default function OpportunityDetails() {
                                         )}
                                     </Button>
                                 )}
+
+                                {/* Chat Button - Always visible */}
+                                <Button
+                                    variant="outline"
+                                    className="w-full gap-2"
+                                    onClick={() => navigate(`/chat?receiverId=${opportunity.ong.id}`)}
+                                >
+                                    <MessageCircle className="h-4 w-4" />
+                                    Conversar com a ONG
+                                </Button>
 
                                 <Separator />
 

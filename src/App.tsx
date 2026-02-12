@@ -14,6 +14,7 @@ import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import OpportunityDetails from "./pages/OpportunityDetails";
 import Explore from "./pages/Explore";
+import Chat from "./pages/Chat";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/perfil/:id" element={<PublicProfile />} />
             <Route path="/explorar" element={<Explore />} />
             <Route path="/vaga/:id" element={<OpportunityDetails />} />
+            <Route path="/chat" element={<Chat />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

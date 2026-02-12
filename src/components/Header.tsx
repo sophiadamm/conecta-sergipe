@@ -9,12 +9,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { DummyDataGenerator } from '@/components/DummyDataGenerator';
-import { Heart, LogOut, User, LayoutDashboard, Search } from 'lucide-react';
+import { Heart, LogOut, User, LayoutDashboard, Search, MessageCircle } from 'lucide-react';
 
 export function Header() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const unreadCount = useUnreadMessages();
 
   const handleSignOut = async () => {
     await signOut();
@@ -40,8 +42,23 @@ export function Header() {
               Explorar
             </Link>
           </Button>
+
+          {user && profile && (
+            <Button variant="ghost" asChild className="relative">
+              <Link to="/chat" className="gap-2">
+                <MessageCircle className="h-4 w-4" />
+                <span className="hidden sm:inline">Mensagens</span>
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 min-w-[20px] flex items-center justify-center px-1.5 text-xs font-bold text-white bg-destructive rounded-full">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+            </Button>
+          )}
+
           <DummyDataGenerator />
-          
+
           {user && profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
