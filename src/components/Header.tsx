@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { DummyDataGenerator } from '@/components/DummyDataGenerator';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Heart, LogOut, User, LayoutDashboard, Search } from 'lucide-react';
 
 export function Header() {
@@ -41,7 +42,9 @@ export function Header() {
             </Link>
           </Button>
           <DummyDataGenerator />
-          
+
+          {user && <NotificationBell />}
+
           {user && profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
