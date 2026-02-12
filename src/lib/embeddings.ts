@@ -19,14 +19,6 @@ export function buildProfileText(profile: { nome?: string | null; bio?: string |
   return parts.join(' | ');
 }
 
-export function buildOpportunityText(opportunity: { titulo?: string | null; descricao?: string | null; skills_required?: string | null }): string {
-  const parts: string[] = [];
-  if (opportunity.titulo) parts.push(`Título: ${opportunity.titulo}`);
-  if (opportunity.descricao) parts.push(`Descrição: ${opportunity.descricao}`);
-  if (opportunity.skills_required) parts.push(`Habilidades necessárias: ${opportunity.skills_required}`);
-  return parts.join(' | ');
-}
-
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   const trimmed = text.trim();
   if (!trimmed) return null;
