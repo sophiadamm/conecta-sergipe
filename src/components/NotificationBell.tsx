@@ -6,7 +6,6 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useNavigate } from 'react-router-dom';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,21 +14,11 @@ import { useState } from 'react';
 
 export function NotificationBell() {
     const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, loading } = useNotifications();
-    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
 
     const handleNotificationClick = async (notificationId: string) => {
         await markAsRead(notificationId);
         // Não fechamos mais o popover automaticamente para permitir interação contínua se o usuário quiser ler várias
-        // Mas se o objetivo for apenas marcar como lida e não navegar, talvez nem precise fechar?
-        // O user pediu: "O usuário clica na notificação, ela é marcada como lida... mas ele permanece na mesma página"
-        // Vou manter setOpen(false)?
-        // Se eu não fechar, ele pode clicar em várias.
-        // Se eu fechar, parece que a notificação "fez algo".
-        // O user não especificou sobre fechar o popover. O padrão geralmente é NÃO fechar se não navegar.
-        // Vou optar por NÃO fechar o popover ao clicar, apenas marcar como lida e atualizar o visual.
-        // Isso dá um feedback melhor de "li isso".
-        // Mas espere... se eu clico, ela marca como lida e muda o estilo. O popover fica aberto. Isso é bom.
     };
 
     const getNotificationIcon = (type: string) => {
@@ -191,23 +180,7 @@ export function NotificationBell() {
                         </div>
                     )}
                 </ScrollArea>
-
-                {/* Footer */}
-                {notifications.length > 0 && (
-                    <div className="border-t px-4 py-2 bg-muted/20">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full h-8 text-xs font-medium"
-                            onClick={() => {
-                                setOpen(false);
-                                navigate('/dashboard');
-                            }}
-                        >
-                            Ver todas no Dashboard
-                        </Button>
-                    </div>
-                )}
+                {/* Footer Removido */}
             </PopoverContent>
         </Popover>
     );
