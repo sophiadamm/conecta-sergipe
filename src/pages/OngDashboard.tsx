@@ -358,17 +358,7 @@ export default function OngDashboard() {
               Gerencie suas oportunidades e voluntários.
             </p>
           </div>
-          <Button onClick={() => {
-            setEditingOpportunity(null);
-            form.reset({
-              titulo: '',
-              descricao: '',
-              skills_required: '',
-              horas_estimadas: 4,
-              location: '',
-            });
-            setShowCreateDialog(true);
-          }} className="gap-2">
+          <Button onClick={() => navigate('/ong/nova-oportunidade')} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Oportunidade
           </Button>
@@ -440,17 +430,7 @@ export default function OngDashboard() {
                 <p className="text-muted-foreground mb-4">
                   Você ainda não criou nenhuma oportunidade.
                 </p>
-                <Button onClick={() => {
-                  setEditingOpportunity(null);
-                  form.reset({
-                    titulo: '',
-                    descricao: '',
-                    skills_required: '',
-                    horas_estimadas: 4,
-                    location: '',
-                  });
-                  setShowCreateDialog(true);
-                }}>
+                <Button onClick={() => navigate('/ong/nova-oportunidade')}>
                   Criar primeira oportunidade
                 </Button>
               </Card>
