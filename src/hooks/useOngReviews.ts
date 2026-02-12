@@ -19,12 +19,46 @@ export interface OngReview {
   } | null;
 }
 
+export interface OngReviewStats {
+  avgRating: number;
+  totalReviews: number;
+  distribution: { stars: number; count: number; percentage: number }[];
+}
+
 export interface UseOngReviewsResult {
   reviews: OngReview[];
   avgRating: number;
   totalCount: number;
+  stats: OngReviewStats;
   loading: boolean;
   error: Error | null;
+}
+
+function calculateOngReviewStats(reviews: OngReview[]): OngReviewStats {
+  if (!reviews || reviews.length === 0) {
+    return {
+      avgRating: 0,
+      totalReviews: 0,
+      distribution: [5, 4, 3, 2, 1].map((stars) => ({
+        stars,
+        count: 0,
+        percentage: 0,
+      })),
+    };
+  }
+  const totalReviews = reviews.length;
+  const sum = reviews.reduce((acc, r) => acc + r.rating_voluntario, 0);
+  const avgRating = sum / totalReviews;
+  const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  reviews.forEach((r) => {
+    counts[r.rating_voluntario] = (counts[r.rating_voluntario] ?? 0) + 1;
+  });
+  const distribution = [5, 4, 3, 2, 1].map((stars) => ({
+    stars,
+    count: counts[stars],
+    percentage: (counts[stars] / totalReviews) * 100,
+  }));
+  return { avgRating, totalReviews, distribution };
 }
 
 /**
@@ -51,7 +85,7 @@ export function useOngReviews(ongId: string | undefined): UseOngReviewsResult {
       const opportunityIds = (opps || []).map((o) => o.id);
       if (opportunityIds.length === 0) return [];
 
-      // 2. Matches com avaliação do voluntário (rating_voluntario IS NOT NULL)
+      // 2. Matches concluídos com avaliação do voluntário (rating_voluntario IS NOT NULL)
       const { data: matchesData, error: matchesError } = await supabase
         .from('matches')
         .select(`
@@ -65,6 +99,7 @@ export function useOngReviews(ongId: string | undefined): UseOngReviewsResult {
           opportunity:opportunities(id, titulo)
         `)
         .in('opportunity_id', opportunityIds)
+        .eq('status', 'concluido')
         .not('rating_voluntario', 'is', null)
         .order('updated_at', { ascending: false });
 
@@ -92,11 +127,13 @@ export function useOngReviews(ongId: string | undefined): UseOngReviewsResult {
     totalCount > 0
       ? reviews.reduce((sum, r) => sum + r.rating_voluntario, 0) / totalCount
       : 0;
+  const stats = calculateOngReviewStats(reviews);
 
   return {
     reviews,
     avgRating,
     totalCount,
+    stats,
     loading,
     error: error as Error | null,
   };

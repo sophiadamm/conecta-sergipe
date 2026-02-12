@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import { ProfileData, useOngOpportunities } from '@/hooks/useProfile';
+import { ProfileData, useOngOpportunities, useOngTotalOpportunitiesCount } from '@/hooks/useProfile';
+import { useOngReviews } from '@/hooks/useOngReviews';
+import { OngReviewsSection } from '@/components/profile/OngReviewsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Building2, Clock, MapPin, Mail, Briefcase, ArrowRight } from 'lucide-react';
+import { Building2, Clock, MapPin, Mail, Briefcase, ArrowRight, Star } from 'lucide-react';
 
 interface OngProfileProps {
   profile: ProfileData;
@@ -13,6 +15,8 @@ interface OngProfileProps {
 
 export function OngProfile({ profile }: OngProfileProps) {
   const { data: opportunities, isLoading: loadingOpportunities } = useOngOpportunities(profile.id);
+  const { data: totalOpportunitiesCount = 0 } = useOngTotalOpportunitiesCount(profile.id);
+  const { reviews, stats, loading: loadingReviews } = useOngReviews(profile.id);
 
   const areasList = profile.skills ? profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
 
@@ -49,6 +53,26 @@ export function OngProfile({ profile }: OngProfileProps) {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Stats */}
+            <div className="flex gap-4">
+              {stats.avgRating > 0 && (
+                <div className="text-center p-3 bg-muted rounded-lg">
+                  <div className="flex items-center justify-center gap-1 text-2xl font-bold text-warning">
+                    <Star className="h-5 w-5 fill-warning" />
+                    {stats.avgRating.toFixed(1)}
+                  </div>
+                  <p className="text-xs text-muted-foreground">Avaliação</p>
+                </div>
+              )}
+              <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="flex items-center justify-center gap-1 text-2xl font-bold text-primary">
+                  <Briefcase className="h-5 w-5" />
+                  {totalOpportunitiesCount}
+                </div>
+                <p className="text-xs text-muted-foreground">Vagas Criadas</p>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -143,6 +167,13 @@ export function OngProfile({ profile }: OngProfileProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Avaliações da ONG */}
+      <OngReviewsSection
+        reviews={reviews}
+        stats={stats}
+        isLoading={loadingReviews}
+      />
     </div>
   );
 }
