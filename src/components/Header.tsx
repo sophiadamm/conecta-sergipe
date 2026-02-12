@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { DummyDataGenerator } from '@/components/DummyDataGenerator';
+import { NotificationBell } from '@/components/NotificationBell';
 import { Heart, LogOut, User, LayoutDashboard, Search, MessageCircle } from 'lucide-react';
 
 export function Header() {
@@ -58,6 +59,8 @@ export function Header() {
           )}
 
           <DummyDataGenerator />
+
+          {user && <NotificationBell />}
 
           {user && profile ? (
             <DropdownMenu>
