@@ -32,6 +32,7 @@ const App = () => (
             <Route path="/voluntario" element={<VolunteerDashboard />} />
             <Route path="/ong" element={<OngDashboard />} />
             <Route path="/ong/nova-oportunidade" element={<NewOpportunity />} />
+            <Route path="/ong/editar-oportunidade/:id" element={<NewOpportunity />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/perfil/:id" element={<PublicProfile />} />
             <Route path="/explorar" element={<Explore />} />

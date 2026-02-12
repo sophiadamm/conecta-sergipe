@@ -4,11 +4,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
-import { Clock, Building, ArrowLeft, Loader2, CheckCircle2, MapPin } from 'lucide-react';
+import {
+    Clock, Building, ArrowLeft, Loader2, CheckCircle2, MapPin,
+    Calendar, Briefcase, Award, GraduationCap, Users, Gift,
+    Home, Wifi, Blend, Check, X
+} from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
 
 interface Opportunity {
     id: string;
@@ -17,12 +22,43 @@ interface Opportunity {
     horas_estimadas: number;
     skills_required: string | null;
     location: string | null;
+    // New fields
+    causas: string[] | null;
+    min_vagas: number | null;
+    formato: 'presencial' | 'remoto' | 'hibrido' | null;
+    nivel_experiencia: 'iniciante' | 'intermediario' | 'especialista' | null;
+    emite_certificado: boolean | null;
+    oferece_treinamento: boolean | null;
+    recursos_oferecidos: string | null;
+    // Address fields
+    endereco: string | null;
+    bairro: string | null;
+    cidade: string | null;
     ong: {
         id: string;
         nome: string;
         bio: string | null;
+        avatar_url: string | null;
     };
 }
+
+const FORMATO_LABELS = {
+    presencial: 'Presencial',
+    remoto: 'Remoto',
+    hibrido: 'Híbrido'
+};
+
+const FORMATO_ICONS = {
+    presencial: Home,
+    remoto: Wifi,
+    hibrido: Blend
+};
+
+const NIVEL_LABELS = {
+    iniciante: 'Iniciante',
+    intermediario: 'Intermediário',
+    especialista: 'Especialista'
+};
 
 export default function OpportunityDetails() {
     const { id } = useParams<{ id: string }>();
@@ -45,19 +81,29 @@ export default function OpportunityDetails() {
             const { data, error } = await supabase
                 .from('opportunities')
                 .select(`
-          id,
-          titulo,
-          descricao,
-          horas_estimadas,
-          skills_required,
-          location,
-          ong:profiles!opportunities_ong_id_fkey(id, nome, bio)
-        `)
+                    id,
+                    titulo,
+                    descricao,
+                    horas_estimadas,
+                    skills_required,
+                    location,
+                    causas,
+                    min_vagas,
+                    formato,
+                    nivel_experiencia,
+                    emite_certificado,
+                    oferece_treinamento,
+                    recursos_oferecidos,
+                    endereco,
+                    bairro,
+                    cidade,
+                    ong:profiles!opportunities_ong_id_fkey(id, nome, bio, avatar_url)
+                `)
                 .eq('id', id)
                 .single();
 
             if (error) throw error;
-            setOpportunity(data);
+            setOpportunity(data as any);
         } catch (error) {
             console.error('Error loading opportunity:', error);
             toast({
@@ -65,7 +111,7 @@ export default function OpportunityDetails() {
                 description: 'Não foi possível carregar os detalhes da vaga.',
                 variant: 'destructive',
             });
-            navigate('/voluntario');
+            navigate('/explorar');
         } finally {
             setLoading(false);
         }
@@ -131,9 +177,16 @@ export default function OpportunityDetails() {
         return (
             <div className="min-h-screen bg-background">
                 <Header />
-                <main className="container py-8">
-                    <Skeleton className="h-[200px] w-full mb-8" />
-                    <Skeleton className="h-[100px] w-full" />
+                <main className="container py-8 max-w-5xl">
+                    <Skeleton className="h-8 w-24 mb-6" />
+                    <Skeleton className="h-64 w-full mb-6" />
+                    <div className="grid gap-6 md:grid-cols-3">
+                        <div className="md:col-span-2 space-y-6">
+                            <Skeleton className="h-48 w-full" />
+                            <Skeleton className="h-48 w-full" />
+                        </div>
+                        <Skeleton className="h-96 w-full" />
+                    </div>
                 </main>
             </div>
         );
@@ -141,116 +194,350 @@ export default function OpportunityDetails() {
 
     if (!opportunity) return null;
 
+    const skills = opportunity.skills_required
+        ? opportunity.skills_required.split(',').map(s => s.trim()).filter(Boolean)
+        : [];
+
+    const recursos = opportunity.recursos_oferecidos
+        ? opportunity.recursos_oferecidos.split(',').map(r => r.trim()).filter(Boolean)
+        : [];
+
+    const FormatoIcon = opportunity.formato ? FORMATO_ICONS[opportunity.formato] : MapPin;
+
     return (
         <div className="min-h-screen bg-background">
             <Header />
-            <main className="container py-8 max-w-4xl">
+            <main className="container py-8 max-w-5xl">
                 <Button
                     variant="ghost"
-                    className="mb-6"
+                    className="mb-6 gap-2"
                     onClick={() => navigate(-1)}
                 >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    <ArrowLeft className="h-4 w-4" />
                     Voltar
                 </Button>
 
-                <div className="grid gap-6 md:grid-cols-3">
-                    <div className="md:col-span-2 space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <Badge className="w-fit mb-2">Oportunidade de Voluntariado</Badge>
-                                <CardTitle className="text-2xl">{opportunity.titulo}</CardTitle>
-                                <div
-                                    className="flex items-center gap-2 mt-2 text-lg text-muted-foreground hover:text-primary transition-colors cursor-pointer w-fit"
-                                    onClick={() => navigate(`/perfil/${opportunity.ong.id}`)}
-                                >
-                                    <Building className="h-4 w-4" />
-                                    <span className="underline decoration-dotted underline-offset-4">{opportunity.ong.nome}</span>
+                {/* Hero Section */}
+                <Card className="mb-6 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-background">
+                    <CardContent className="pt-8 pb-8">
+                        <div className="space-y-4">
+                            {/* Causas Tags */}
+                            {opportunity.causas && opportunity.causas.length > 0 && (
+                                <div className="flex flex-wrap gap-2">
+                                    {opportunity.causas.map((causa, idx) => (
+                                        <Badge key={idx} variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                                            {causa}
+                                        </Badge>
+                                    ))}
                                 </div>
-                                {(opportunity.location != null && opportunity.location.trim() !== '') && (
-                                    <div className="flex items-center gap-2 mt-2 text-muted-foreground">
-                                        <MapPin className="h-4 w-4 shrink-0" />
-                                        <span>{opportunity.location}</span>
+                            )}
+
+                            {/* Título */}
+                            <h1 className="text-4xl font-bold tracking-tight">{opportunity.titulo}</h1>
+
+                            {/* ONG Info */}
+                            <div
+                                className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors cursor-pointer w-fit"
+                                onClick={() => navigate(`/perfil/${opportunity.ong.id}`)}
+                            >
+                                <Building className="h-5 w-5" />
+                                <span className="text-lg underline decoration-dotted underline-offset-4">
+                                    {opportunity.ong.nome}
+                                </span>
+                            </div>
+
+                            {/* Quick Info */}
+                            <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
+                                {opportunity.formato && (
+                                    <div className="flex items-center gap-2">
+                                        <FormatoIcon className="h-5 w-5 text-primary" />
+                                        <span className="font-medium">{FORMATO_LABELS[opportunity.formato]}</span>
                                     </div>
                                 )}
+                                {/* Location - Show if any location data exists */}
+                                {(opportunity.endereco || opportunity.bairro || opportunity.cidade || opportunity.location) && (
+                                    <>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <div className="flex items-center gap-2">
+                                            <MapPin className="h-5 w-5 text-primary" />
+                                            <span>
+                                                {opportunity.endereco || opportunity.bairro || opportunity.cidade
+                                                    ? [opportunity.endereco, opportunity.bairro, opportunity.cidade]
+                                                        .filter(Boolean)
+                                                        .join(', ')
+                                                    : opportunity.location}
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
+                                {opportunity.min_vagas && opportunity.min_vagas > 1 && (
+                                    <>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <div className="flex items-center gap-2">
+                                            <Users className="h-5 w-5 text-primary" />
+                                            <span>{opportunity.min_vagas} vagas</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="grid gap-6 md:grid-cols-3">
+                    {/* Main Content */}
+                    <div className="md:col-span-2 space-y-6">
+                        {/* Logística e Compromisso */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Briefcase className="h-5 w-5 text-primary" />
+                                    Logística e Compromisso
+                                </CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div>
-                                    <h3 className="font-semibold mb-2">Sobre a vaga</h3>
-                                    <p className="text-muted-foreground whitespace-pre-wrap">
-                                        {opportunity.descricao}
-                                    </p>
+                            <CardContent className="grid sm:grid-cols-2 gap-4">
+                                <div className="flex items-start gap-3">
+                                    <Clock className="h-5 w-5 text-primary mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold text-sm">Carga Horária</p>
+                                        <p className="text-muted-foreground">{opportunity.horas_estimadas}h/semana</p>
+                                    </div>
                                 </div>
 
-                                {opportunity.skills_required && (
-                                    <div>
-                                        <h3 className="font-semibold mb-2">Habilidades Necessárias</h3>
-                                        <p className="text-muted-foreground">
-                                            {opportunity.skills_required}
-                                        </p>
+                                {opportunity.formato && (
+                                    <div className="flex items-start gap-3">
+                                        <FormatoIcon className="h-5 w-5 text-primary mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-sm">Formato</p>
+                                            <p className="text-muted-foreground">{FORMATO_LABELS[opportunity.formato]}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {opportunity.min_vagas && (
+                                    <div className="flex items-start gap-3">
+                                        <Users className="h-5 w-5 text-primary mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-sm">Vagas Disponíveis</p>
+                                            <p className="text-muted-foreground">{opportunity.min_vagas} {opportunity.min_vagas === 1 ? 'vaga' : 'vagas'}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Location Card - Show for all opportunities with location data */}
+                                {(opportunity.endereco || opportunity.bairro || opportunity.cidade || opportunity.location) && (
+                                    <div className="flex items-start gap-3 sm:col-span-2">
+                                        <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-sm">Localização</p>
+                                            {opportunity.endereco || opportunity.bairro || opportunity.cidade ? (
+                                                <div className="text-muted-foreground space-y-0.5">
+                                                    {opportunity.endereco && (
+                                                        <p>{opportunity.endereco}</p>
+                                                    )}
+                                                    {(opportunity.bairro || opportunity.cidade) && (
+                                                        <p>
+                                                            {[opportunity.bairro, opportunity.cidade]
+                                                                .filter(Boolean)
+                                                                .join(' - ')}
+                                                            {opportunity.cidade && ' / SE'}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-muted-foreground">{opportunity.location}</p>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </CardContent>
                         </Card>
 
+                        {/* Descrição da Vaga */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-lg">Sobre a ONG</CardTitle>
+                                <CardTitle>Sobre a Vaga</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <p className="text-muted-foreground">
+                                <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                                    {opportunity.descricao}
+                                </p>
+                            </CardContent>
+                        </Card>
+
+                        {/* Requisitos e Perfil */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Award className="h-5 w-5 text-primary" />
+                                    Requisitos e Perfil
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {opportunity.nivel_experiencia && (
+                                    <div>
+                                        <p className="font-semibold mb-2 text-sm">Nível de Experiência</p>
+                                        <Badge variant="outline" className="border-primary/30 text-primary">
+                                            {NIVEL_LABELS[opportunity.nivel_experiencia]}
+                                        </Badge>
+                                    </div>
+                                )}
+
+                                {skills.length > 0 && (
+                                    <div>
+                                        <p className="font-semibold mb-3 text-sm">Habilidades Necessárias</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            {skills.map((skill, idx) => (
+                                                <Badge key={idx} variant="secondary">
+                                                    {skill}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* O que Oferecemos */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Gift className="h-5 w-5 text-primary" />
+                                    O que Oferecemos
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    {opportunity.emite_certificado !== null && (
+                                        <div className="flex items-center gap-3">
+                                            {opportunity.emite_certificado ? (
+                                                <Check className="h-5 w-5 text-green-600" />
+                                            ) : (
+                                                <X className="h-5 w-5 text-muted-foreground" />
+                                            )}
+                                            <div>
+                                                <p className="font-medium text-sm">Certificado</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {opportunity.emite_certificado ? 'Emite certificado' : 'Não emite'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {opportunity.oferece_treinamento !== null && (
+                                        <div className="flex items-center gap-3">
+                                            {opportunity.oferece_treinamento ? (
+                                                <Check className="h-5 w-5 text-green-600" />
+                                            ) : (
+                                                <X className="h-5 w-5 text-muted-foreground" />
+                                            )}
+                                            <div>
+                                                <p className="font-medium text-sm">Treinamento</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {opportunity.oferece_treinamento ? 'Oferece treinamento' : 'Não oferece'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {recursos.length > 0 && (
+                                    <>
+                                        <Separator />
+                                        <div>
+                                            <p className="font-semibold mb-3 text-sm">Recursos Oferecidos</p>
+                                            <ul className="space-y-2">
+                                                {recursos.map((recurso, idx) => (
+                                                    <li key={idx} className="flex items-center gap-2 text-muted-foreground">
+                                                        <Check className="h-4 w-4 text-primary" />
+                                                        <span>{recurso}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        {/* Sobre a ONG */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Sobre a ONG</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-muted-foreground leading-relaxed">
                                     {opportunity.ong.bio || "Esta organização ainda não possui uma descrição."}
                                 </p>
+                                <Button
+                                    variant="link"
+                                    className="mt-4 p-0 h-auto"
+                                    onClick={() => navigate(`/perfil/${opportunity.ong.id}`)}
+                                >
+                                    Ver perfil completo →
+                                </Button>
                             </CardContent>
                         </Card>
                     </div>
 
+                    {/* Sidebar - Sticky Action Card */}
                     <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-lg">Detalhes</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex items-center gap-3">
-                                    <Clock className="h-5 w-5 text-primary" />
-                                    <div>
-                                        <p className="font-medium">Carga Horária</p>
-                                        <p className="text-sm text-muted-foreground">{opportunity.horas_estimadas}h estimadas</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <MapPin className="h-5 w-5 text-primary shrink-0" />
-                                    <div>
-                                        <p className="font-medium">Localização</p>
-                                        <p className="text-sm text-muted-foreground">
-                                            {opportunity.location?.trim() ? opportunity.location : 'Localização não informada'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                            <CardFooter>
+                        <Card className="sticky top-4">
+                            <CardContent className="pt-6 space-y-6">
                                 {hasApplied ? (
-                                    <Button className="w-full" disabled variant="secondary">
-                                        <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />
-                                        Candidatura enviada
-                                    </Button>
+                                    <div className="text-center space-y-4">
+                                        <div className="mx-auto w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                                            <CheckCircle2 className="h-8 w-8 text-green-600" />
+                                        </div>
+                                        <div>
+                                            <p className="font-semibold">Candidatura enviada!</p>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                A ONG irá avaliar seu perfil
+                                            </p>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <Button
-                                        className="w-full"
+                                        className="w-full h-12 text-base gradient-primary"
                                         onClick={handleApply}
                                         disabled={applying}
                                     >
                                         {applying ? (
                                             <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                                 Enviando...
                                             </>
                                         ) : (
-                                            "Candidatar-se"
+                                            <>
+                                                <CheckCircle2 className="mr-2 h-5 w-5" />
+                                                Candidatar-se
+                                            </>
                                         )}
                                     </Button>
                                 )}
-                            </CardFooter>
+
+                                <Separator />
+
+                                {/* Quick Stats */}
+                                <div className="space-y-3 text-sm">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-muted-foreground">Carga horária</span>
+                                        <span className="font-medium">{opportunity.horas_estimadas}h/semana</span>
+                                    </div>
+                                    {opportunity.formato && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Formato</span>
+                                            <span className="font-medium">{FORMATO_LABELS[opportunity.formato]}</span>
+                                        </div>
+                                    )}
+                                    {opportunity.nivel_experiencia && (
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-muted-foreground">Nível</span>
+                                            <span className="font-medium">{NIVEL_LABELS[opportunity.nivel_experiencia]}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
                         </Card>
                     </div>
                 </div>

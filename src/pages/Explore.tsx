@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import ExploreFilters from '@/components/ExploreFilters';
 export default function Explore() {
   // We removed the top search input: filters panel is the single source of truth
   const [searchType, setSearchType] = useState<'vagas' | 'ongs'>('vagas');
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const [filters, setFilters] = useState({
     query: '',
@@ -23,6 +24,12 @@ export default function Explore() {
     minHours: 0,
     maxHours: 40,
     location: [] as string[],
+    causas: [] as string[],
+    minVagas: undefined as number | undefined,
+    formato: null as 'presencial' | 'remoto' | 'hibrido' | null,
+    nivelExperiencia: null as 'iniciante' | 'intermediario' | 'especialista' | null,
+    emiteCertificado: null as 'sim' | 'nao' | null,
+    ofereceTreinamento: null as 'sim' | 'nao' | null,
   });
 
   // Restore saved filters
@@ -46,11 +53,19 @@ export default function Explore() {
     location: filters.location,
   });
 
-  function handleFiltersChange(next: typeof filters) {
-    setFilters(next);
+  function handleFiltersChange(next: Partial<typeof filters> & { query: string; skills: string[]; minHours: number; maxHours: number; location: string[] }) {
+    setFilters({
+      ...filters,
+      ...next
+    });
     try {
-      localStorage.setItem('exploreFilters', JSON.stringify(next));
+      localStorage.setItem('exploreFilters', JSON.stringify({ ...filters, ...next }));
     } catch { }
+
+    // Scroll to results when search is triggered
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   return (
@@ -85,6 +100,12 @@ export default function Explore() {
               minHours: filters.minHours ?? 0,
               maxHours: filters.maxHours ?? 40,
               location: filters.location ?? [],
+              causas: filters.causas ?? [],
+              minVagas: filters.minVagas,
+              formato: filters.formato ?? null,
+              nivelExperiencia: filters.nivelExperiencia ?? null,
+              emiteCertificado: filters.emiteCertificado ?? null,
+              ofereceTreinamento: filters.ofereceTreinamento ?? null,
             }}
             onChange={(next) => handleFiltersChange(next)}
           />
@@ -100,6 +121,12 @@ export default function Explore() {
                   minHours: filters.minHours ?? 0,
                   maxHours: filters.maxHours ?? 40,
                   location: filters.location ?? [],
+                  causas: filters.causas ?? [],
+                  minVagas: filters.minVagas,
+                  formato: filters.formato ?? null,
+                  nivelExperiencia: filters.nivelExperiencia ?? null,
+                  emiteCertificado: filters.emiteCertificado ?? null,
+                  ofereceTreinamento: filters.ofereceTreinamento ?? null,
                 }}
                 onChange={(next) => handleFiltersChange(next)}
               />
@@ -111,13 +138,19 @@ export default function Explore() {
                   minHours: filters.minHours ?? 0,
                   maxHours: filters.maxHours ?? 40,
                   location: filters.location ?? [],
+                  causas: filters.causas ?? [],
+                  minVagas: filters.minVagas,
+                  formato: filters.formato ?? null,
+                  nivelExperiencia: filters.nivelExperiencia ?? null,
+                  emiteCertificado: filters.emiteCertificado ?? null,
+                  ofereceTreinamento: filters.ofereceTreinamento ?? null,
                 }}
                 onChange={(next) => handleFiltersChange(next)}
               />
             )}
           </div>
 
-          <main>
+          <main ref={resultsRef}>
             {searchType === 'vagas' ? (
               loadingOpps ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -211,8 +244,8 @@ export default function Explore() {
                       ? 'Tente ajustar os filtros de busca'
                       : 'Ainda não há oportunidades publicadas'}
                   </p>
-                  {(filters.query || (filters.skills && filters.skills.length > 0) || filters.location.length > 0) && (
-                    <Button variant="outline" onClick={() => handleFiltersChange({ query: '', skills: [], minHours: 0, maxHours: 40, location: [] })}>Limpar filtros</Button>
+                  {(filters.query || (filters.skills && filters.skills.length > 0) || filters.location.length > 0 || filters.causas.length > 0 || filters.minVagas || filters.formato || filters.nivelExperiencia || filters.emiteCertificado || filters.ofereceTreinamento) && (
+                    <Button variant="outline" onClick={() => handleFiltersChange({ query: '', skills: [], minHours: 0, maxHours: 40, location: [], causas: [], minVagas: undefined, formato: null, nivelExperiencia: null, emiteCertificado: null, ofereceTreinamento: null })}>Limpar filtros</Button>
                   )}
                 </Card>
               )

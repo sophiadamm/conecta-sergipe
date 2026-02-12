@@ -502,17 +502,7 @@ export default function OngDashboard() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          setEditingOpportunity(opp);
-                          form.reset({
-                            titulo: opp.titulo,
-                            descricao: opp.descricao,
-                            skills_required: opp.skills_required || '',
-                            horas_estimadas: opp.horas_estimadas,
-                            location: opp.location || '',
-                          });
-                          setShowCreateDialog(true);
-                        }}
+                        onClick={() => navigate(`/ong/editar-oportunidade/${opp.id}`)}
                         className="gap-2"
                       >
                         <Pencil className="h-4 w-4" />
