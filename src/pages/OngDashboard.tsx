@@ -603,22 +603,38 @@ export default function OngDashboard() {
                           </p>
                         )}
                       </CardContent>
-                      <CardFooter className="gap-2">
-                        <Button
-                          onClick={() => handleMatchAction(match.id, 'aprovar')}
-                          className="gap-2"
-                        >
-                          <CheckCircle2 className="h-4 w-4" />
-                          Aprovar
-                        </Button>
+                      <CardFooter className="flex justify-between items-center gap-2 pt-2">
+                        {/* Action Group 1: Communication (Safe Zone) */}
                         <Button
                           variant="outline"
-                          onClick={() => handleMatchAction(match.id, 'rejeitar')}
-                          className="gap-2"
+                          size="sm"
+                          onClick={() => navigate(`/chat?newChatWith=${match.voluntario?.id}`)}
+                          className="gap-2 text-primary hover:text-primary hover:bg-primary/10 border-primary/20"
                         >
-                          <XCircle className="h-4 w-4" />
-                          Rejeitar
+                          <MessageSquare className="h-4 w-4" />
+                          Conversar
                         </Button>
+
+                        {/* Action Group 2: Decision (Critical Zone) */}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleMatchAction(match.id, 'rejeitar')}
+                            className="gap-2 border-destructive/50 text-destructive hover:bg-destructive/10"
+                          >
+                            <XCircle className="h-4 w-4" />
+                            Rejeitar
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleMatchAction(match.id, 'aprovar')}
+                            className="gap-2 bg-success hover:bg-success/90 text-white"
+                          >
+                            <CheckCircle2 className="h-4 w-4" />
+                            Aprovar
+                          </Button>
+                        </div>
                       </CardFooter>
                     </Card>
                   ))}
