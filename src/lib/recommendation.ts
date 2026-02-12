@@ -15,6 +15,7 @@ interface OpportunityData {
   horas_estimadas: number;
   ong_nome?: string;
   location?: string | null;
+  embedding?: number[] | null;
 }
 
 interface VolunteerData {
