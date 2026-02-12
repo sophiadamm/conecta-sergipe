@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { generateEmbedding, buildOpportunityText } from '@/lib/embeddings';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -88,9 +89,6 @@ const opportunitySchema = z.object({
     // Requisitos do Perfil
     hardSkills: z.string().optional(),
     softSkills: z.string().optional(),
-    nivelExperiencia: z.enum(['iniciante', 'intermediario', 'especialista'], {
-        required_error: 'Selecione o nível de experiência necessário',
-    }),
     prerequisitos: z.string().optional(),
 
     // Contrapartida e Benefícios
@@ -159,7 +157,6 @@ export default function NewOpportunity() {
             observacoesLogistica: '',
             hardSkills: '',
             softSkills: '',
-            nivelExperiencia: 'iniciante',
             prerequisitos: '',
             emiteCertificado: 'nao',
             ofereceTreinamento: 'nao',
@@ -191,7 +188,6 @@ export default function NewOpportunity() {
                 observacoesLogistica: '',
                 hardSkills: '',
                 softSkills: '',
-                nivelExperiencia: 'iniciante',
                 prerequisitos: '',
                 emiteCertificado: 'nao',
                 ofereceTreinamento: 'nao',
@@ -233,7 +229,6 @@ export default function NewOpportunity() {
                     observacoesLogistica: '',
                     hardSkills: '',
                     softSkills: '',
-                    nivelExperiencia: (data.nivel_experiencia as any) || 'iniciante',
                     prerequisitos: '',
                     emiteCertificado: data.emite_certificado ? 'sim' : 'nao',
                     ofereceTreinamento: data.oferece_treinamento ? 'sim' : 'nao',
@@ -270,28 +265,41 @@ export default function NewOpportunity() {
         setIsSubmitting(true);
 
         try {
+            // Generate embedding from opportunity text
+            const opportunityText = buildOpportunityText({
+                titulo: data.titulo,
+                descricao: data.descricao,
+                skills_required: data.causas || null,
+            });
+            const embedding = await generateEmbedding(opportunityText);
+
+            const baseData: any = {
+                titulo: data.titulo,
+                descricao: data.descricao,
+                skills_required: data.causas, // Keep for backward compatibility if needed, or remove
+                horas_estimadas: data.cargaHorariaSemanal,
+                location: data.cidade || profile?.locations?.[0] || 'Aracaju', // Keep for backward compatibility
+                // New fields
+                causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
+                min_vagas: data.vagas,
+                formato: data.formato,
+                emite_certificado: data.emiteCertificado === 'sim',
+                oferece_treinamento: data.ofereceTreinamento === 'sim',
+                recursos_oferecidos: data.recursosOferecidos,
+                endereco: data.endereco,
+                bairro: data.bairro,
+                cidade: data.cidade,
+            };
+
+            if (embedding) {
+                baseData.embedding = JSON.stringify(embedding);
+            }
+
             if (isEditMode && id) {
                 // UPDATE existing opportunity
                 const { error } = await supabase
                     .from('opportunities')
-                    .update({
-                        titulo: data.titulo,
-                        descricao: data.descricao,
-                        skills_required: data.causas, // Keep for backward compatibility if needed, or remove
-                        horas_estimadas: data.cargaHorariaSemanal,
-                        location: data.cidade || profile?.locations?.[0] || 'Aracaju', // Keep for backward compatibility
-                        // New fields
-                        causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
-                        min_vagas: data.vagas,
-                        formato: data.formato,
-                        nivel_experiencia: data.nivelExperiencia,
-                        emite_certificado: data.emiteCertificado === 'sim',
-                        oferece_treinamento: data.ofereceTreinamento === 'sim',
-                        recursos_oferecidos: data.recursosOferecidos,
-                        endereco: data.endereco,
-                        bairro: data.bairro,
-                        cidade: data.cidade,
-                    })
+                    .update(baseData)
                     .eq('id', id);
 
                 if (error) throw error;
@@ -310,17 +318,6 @@ export default function NewOpportunity() {
                     horas_estimadas: data.cargaHorariaSemanal,
                     location: data.endereco || profile?.locations?.[0] || 'Aracaju',
                     ativa: true,
-                    // New fields
-                    causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
-                    min_vagas: data.vagas,
-                    formato: data.formato,
-                    nivel_experiencia: data.nivelExperiencia,
-                    emite_certificado: data.emiteCertificado === 'sim',
-                    oferece_treinamento: data.ofereceTreinamento === 'sim',
-                    recursos_oferecidos: data.recursosOferecidos,
-                    endereco: data.endereco,
-                    bairro: data.bairro,
-                    cidade: data.cidade,
                 });
 
                 if (error) throw error;
@@ -841,65 +838,6 @@ export default function NewOpportunity() {
                                 <p className="text-sm text-muted-foreground">
                                     Selecione as competências comportamentais desejadas
                                 </p>
-                            </div>
-
-                            {/* Nível de Experiência */}
-                            <div className="space-y-3">
-                                <Label>
-                                    Nível de Experiência Necessário <span className="text-destructive">*</span>
-                                </Label>
-                                <Controller
-                                    name="nivelExperiencia"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <RadioGroup
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                            className="space-y-3"
-                                        >
-                                            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                                                <RadioGroupItem value="iniciante" id="iniciante" className="mt-1" />
-                                                <div className="flex-1">
-                                                    <Label htmlFor="iniciante" className="font-medium cursor-pointer">
-                                                        Iniciante (Aceita quem quer aprender)
-                                                    </Label>
-                                                    <p className="text-sm text-muted-foreground mt-1">
-                                                        Ideal para quem está começando e quer desenvolver novas habilidades
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                                                <RadioGroupItem value="intermediario" id="intermediario" className="mt-1" />
-                                                <div className="flex-1">
-                                                    <Label htmlFor="intermediario" className="font-medium cursor-pointer">
-                                                        Intermediário (Já tem noções, mas precisa de supervisão)
-                                                    </Label>
-                                                    <p className="text-sm text-muted-foreground mt-1">
-                                                        Para quem já possui conhecimento básico e pode trabalhar com orientação
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                                                <RadioGroupItem value="especialista" id="especialista" className="mt-1" />
-                                                <div className="flex-1">
-                                                    <Label htmlFor="especialista" className="font-medium cursor-pointer">
-                                                        Especialista (Precisa rodar o projeto sozinho)
-                                                    </Label>
-                                                    <p className="text-sm text-muted-foreground mt-1">
-                                                        Requer autonomia completa e expertise para conduzir o trabalho de forma independente
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </RadioGroup>
-                                    )}
-                                />
-                                {form.formState.errors.nivelExperiencia && (
-                                    <p className="text-sm text-destructive">
-                                        {form.formState.errors.nivelExperiencia.message}
-                                    </p>
-                                )}
                             </div>
 
                             {/* Pré-requisitos Obrigatórios */}

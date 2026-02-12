@@ -12,7 +12,6 @@ export interface SearchFilters {
   causas?: string[]; // Causa/Área de Atuação
   minVagas?: number; // Minimum number of available positions
   formato?: 'presencial' | 'remoto' | 'hibrido' | null; // Format (null = any)
-  nivelExperiencia?: 'iniciante' | 'intermediario' | 'especialista' | null; // Experience level (null = any)
   emiteCertificado?: 'sim' | 'nao' | null; // Issues certificate (null = indifferent)
   ofereceTreinamento?: 'sim' | 'nao' | null; // Offers training (null = indifferent)
 }
@@ -91,11 +90,6 @@ export function useOpportunitySearch(filters: SearchFilters) {
       // Formato
       if (filters.formato) {
         queryBuilder = queryBuilder.eq('formato', filters.formato);
-      }
-
-      // Nivel Experiencia
-      if (filters.nivelExperiencia) {
-        queryBuilder = queryBuilder.eq('nivel_experiencia', filters.nivelExperiencia);
       }
 
       // Emite Certificado

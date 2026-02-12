@@ -13,7 +13,6 @@ interface Profile {
   avatar_url: string | null;
   linkedin_url: string | null;
   github_url: string | null;
-  experience_level: string | null;
   locations: string[] | null;
 }
 

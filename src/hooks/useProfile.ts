@@ -12,7 +12,6 @@ export interface ProfileData {
   linkedin_url: string | null;
   github_url: string | null;
   locations: string[] | null;
-  experience_level: string | null;
   created_at: string;
 }
 
@@ -71,7 +70,7 @@ export function useProfile(profileId: string | undefined) {
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, user_id, nome, bio, skills, tipo, avatar_url, linkedin_url, github_url, locations, experience_level, created_at')
+        .select('id, user_id, nome, bio, skills, tipo, avatar_url, linkedin_url, github_url, locations, created_at')
         .eq('id', profileId)
         .maybeSingle();
 

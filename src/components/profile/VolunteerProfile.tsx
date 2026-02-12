@@ -22,12 +22,6 @@ interface VolunteerProfileProps {
   profile: ProfileData;
 }
 
-const experienceLevelMap: Record<string, { label: string; color: string }> = {
-  iniciante: { label: 'Iniciante', color: 'bg-blue-100 text-blue-800' },
-  junior: { label: 'Júnior', color: 'bg-green-100 text-green-800' },
-  senior: { label: 'Sênior', color: 'bg-purple-100 text-purple-800' },
-};
-
 export function VolunteerProfile({ profile }: VolunteerProfileProps) {
   const { data: completedMatches, isLoading: loadingMatches } = useVolunteerCompletedMatches(profile.id);
   const { data: reviews, isLoading: loadingReviews } = useVolunteerReviews(profile.id);
@@ -35,7 +29,6 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
   const reviewStats = calculateReviewStats(reviews || []);
 
   const skillsList = profile.skills ? profile.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
-  const experienceLevel = experienceLevelMap[profile.experience_level || 'iniciante'] || experienceLevelMap.iniciante;
 
   // Calculate total stats
   const totalHours = completedMatches?.reduce((sum, m) => sum + (m.horas_validadas || 0), 0) || 0;
@@ -61,10 +54,6 @@ export function VolunteerProfile({ profile }: VolunteerProfileProps) {
                 <Badge className="bg-secondary/10 text-secondary hover:bg-secondary/20">
                   <User className="mr-1 h-3 w-3" />
                   Voluntário
-                </Badge>
-                <Badge className={experienceLevel.color}>
-                  <Award className="mr-1 h-3 w-3" />
-                  {experienceLevel.label}
                 </Badge>
               </div>
 

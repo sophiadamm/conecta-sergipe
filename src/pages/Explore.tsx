@@ -27,7 +27,6 @@ export default function Explore() {
     causas: [] as string[],
     minVagas: undefined as number | undefined,
     formato: null as 'presencial' | 'remoto' | 'hibrido' | null,
-    nivelExperiencia: null as 'iniciante' | 'intermediario' | 'especialista' | null,
     emiteCertificado: null as 'sim' | 'nao' | null,
     ofereceTreinamento: null as 'sim' | 'nao' | null,
   });
@@ -103,7 +102,6 @@ export default function Explore() {
               causas: filters.causas ?? [],
               minVagas: filters.minVagas,
               formato: filters.formato ?? null,
-              nivelExperiencia: filters.nivelExperiencia ?? null,
               emiteCertificado: filters.emiteCertificado ?? null,
               ofereceTreinamento: filters.ofereceTreinamento ?? null,
             }}
@@ -124,7 +122,6 @@ export default function Explore() {
                   causas: filters.causas ?? [],
                   minVagas: filters.minVagas,
                   formato: filters.formato ?? null,
-                  nivelExperiencia: filters.nivelExperiencia ?? null,
                   emiteCertificado: filters.emiteCertificado ?? null,
                   ofereceTreinamento: filters.ofereceTreinamento ?? null,
                 }}
@@ -141,7 +138,6 @@ export default function Explore() {
                   causas: filters.causas ?? [],
                   minVagas: filters.minVagas,
                   formato: filters.formato ?? null,
-                  nivelExperiencia: filters.nivelExperiencia ?? null,
                   emiteCertificado: filters.emiteCertificado ?? null,
                   ofereceTreinamento: filters.ofereceTreinamento ?? null,
                 }}
@@ -244,8 +240,8 @@ export default function Explore() {
                       ? 'Tente ajustar os filtros de busca'
                       : 'Ainda não há oportunidades publicadas'}
                   </p>
-                  {(filters.query || (filters.skills && filters.skills.length > 0) || filters.location.length > 0 || filters.causas.length > 0 || filters.minVagas || filters.formato || filters.nivelExperiencia || filters.emiteCertificado || filters.ofereceTreinamento) && (
-                    <Button variant="outline" onClick={() => handleFiltersChange({ query: '', skills: [], minHours: 0, maxHours: 40, location: [], causas: [], minVagas: undefined, formato: null, nivelExperiencia: null, emiteCertificado: null, ofereceTreinamento: null })}>Limpar filtros</Button>
+                  {(filters.query || (filters.skills && filters.skills.length > 0) || filters.location.length > 0 || filters.causas.length > 0 || filters.minVagas || filters.formato || filters.emiteCertificado || filters.ofereceTreinamento) && (
+                    <Button variant="outline" onClick={() => handleFiltersChange({ query: '', skills: [], minHours: 0, maxHours: 40, location: [], causas: [], minVagas: undefined, formato: null, emiteCertificado: null, ofereceTreinamento: null })}>Limpar filtros</Button>
                   )}
                 </Card>
               )

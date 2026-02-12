@@ -26,7 +26,6 @@ interface Opportunity {
     causas: string[] | null;
     min_vagas: number | null;
     formato: 'presencial' | 'remoto' | 'hibrido' | null;
-    nivel_experiencia: 'iniciante' | 'intermediario' | 'especialista' | null;
     emite_certificado: boolean | null;
     oferece_treinamento: boolean | null;
     recursos_oferecidos: string | null;
@@ -52,12 +51,6 @@ const FORMATO_ICONS = {
     presencial: Home,
     remoto: Wifi,
     hibrido: Blend
-};
-
-const NIVEL_LABELS = {
-    iniciante: 'Iniciante',
-    intermediario: 'Intermediário',
-    especialista: 'Especialista'
 };
 
 export default function OpportunityDetails() {
@@ -90,7 +83,6 @@ export default function OpportunityDetails() {
                     causas,
                     min_vagas,
                     formato,
-                    nivel_experiencia,
                     emite_certificado,
                     oferece_treinamento,
                     recursos_oferecidos,
@@ -374,15 +366,6 @@ export default function OpportunityDetails() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {opportunity.nivel_experiencia && (
-                                    <div>
-                                        <p className="font-semibold mb-2 text-sm">Nível de Experiência</p>
-                                        <Badge variant="outline" className="border-primary/30 text-primary">
-                                            {NIVEL_LABELS[opportunity.nivel_experiencia]}
-                                        </Badge>
-                                    </div>
-                                )}
-
                                 {skills.length > 0 && (
                                     <div>
                                         <p className="font-semibold mb-3 text-sm">Habilidades Necessárias</p>
@@ -538,12 +521,6 @@ export default function OpportunityDetails() {
                                         <div className="flex items-center justify-between">
                                             <span className="text-muted-foreground">Formato</span>
                                             <span className="font-medium">{FORMATO_LABELS[opportunity.formato]}</span>
-                                        </div>
-                                    )}
-                                    {opportunity.nivel_experiencia && (
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-muted-foreground">Nível</span>
-                                            <span className="font-medium">{NIVEL_LABELS[opportunity.nivel_experiencia]}</span>
                                         </div>
                                     )}
                                 </div>

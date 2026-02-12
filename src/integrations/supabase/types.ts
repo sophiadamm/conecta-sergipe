@@ -218,7 +218,6 @@ export type Database = {
           id: string
           location: string | null
           min_vagas: number | null
-          nivel_experiencia: string | null
           oferece_treinamento: boolean | null
           ong_id: string
           recursos_oferecidos: string | null
@@ -241,7 +240,6 @@ export type Database = {
           id?: string
           location?: string | null
           min_vagas?: number | null
-          nivel_experiencia?: string | null
           oferece_treinamento?: boolean | null
           ong_id: string
           recursos_oferecidos?: string | null
@@ -264,7 +262,6 @@ export type Database = {
           id?: string
           location?: string | null
           min_vagas?: number | null
-          nivel_experiencia?: string | null
           oferece_treinamento?: boolean | null
           ong_id?: string
           recursos_oferecidos?: string | null
@@ -289,7 +286,6 @@ export type Database = {
           cpf: string | null
           created_at: string
           embedding: string | null
-          experience_level: string | null
           github_url: string | null
           id: string
           linkedin_url: string | null
@@ -306,7 +302,6 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           embedding?: string | null
-          experience_level?: string | null
           github_url?: string | null
           id?: string
           linkedin_url?: string | null
@@ -323,7 +318,6 @@ export type Database = {
           cpf?: string | null
           created_at?: string
           embedding?: string | null
-          experience_level?: string | null
           github_url?: string | null
           id?: string
           linkedin_url?: string | null

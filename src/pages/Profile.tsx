@@ -14,13 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Save, Linkedin, Github, ArrowLeft } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
@@ -35,7 +28,6 @@ const profileSchema = z.object({
   locations: z.string().optional(),
   linkedin_url: z.string().url('URL inválida').optional().or(z.literal('')),
   github_url: z.string().url('URL inválida').optional().or(z.literal('')),
-  experience_level: z.string().optional(),
 }).refine((data) => {
   if (data.cpf) {
     return validateCPF(data.cpf);
@@ -63,7 +55,6 @@ export default function Profile() {
       locations: '',
       linkedin_url: '',
       github_url: '',
-      experience_level: 'iniciante',
     },
   });
 
@@ -78,7 +69,6 @@ export default function Profile() {
         locations: profile.locations ? profile.locations.join(',') : '',
         linkedin_url: profile.linkedin_url || '',
         github_url: profile.github_url || '',
-        experience_level: profile.experience_level || 'iniciante',
       });
     }
   }, [profile, form]);
@@ -120,7 +110,6 @@ export default function Profile() {
         locations: data.locations ? data.locations.split(',').map(l => l.trim()).filter(Boolean) : null,
         linkedin_url: data.linkedin_url || null,
         github_url: data.github_url || null,
-        experience_level: data.experience_level || 'iniciante',
       };
 
       if (embedding) {
@@ -202,26 +191,6 @@ export default function Profile() {
                         {form.formState.errors.cpf.message}
                       </p>
                     )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="experience_level">Nível de Experiência</Label>
-                    <Controller
-                      name="experience_level"
-                      control={form.control}
-                      render={({ field }) => (
-                        <Select value={field.value || 'iniciante'} onValueChange={field.onChange}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione o nível" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="iniciante">Iniciante</SelectItem>
-                            <SelectItem value="junior">Júnior</SelectItem>
-                            <SelectItem value="senior">Sênior</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    />
                   </div>
                 </>
               )}

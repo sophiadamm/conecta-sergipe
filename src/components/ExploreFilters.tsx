@@ -22,7 +22,6 @@ type Props = {
     causas?: string[];
     minVagas?: number;
     formato?: 'presencial' | 'remoto' | 'hibrido' | null;
-    nivelExperiencia?: 'iniciante' | 'intermediario' | 'especialista' | null;
     emiteCertificado?: 'sim' | 'nao' | null;
     ofereceTreinamento?: 'sim' | 'nao' | null;
   };
@@ -38,7 +37,6 @@ export default function ExploreFilters({ value, onChange }: Props) {
   const [causas, setCausas] = useState<string[]>(value.causas || []);
   const [minVagas, setMinVagas] = useState<number | undefined>(value.minVagas);
   const [formato, setFormato] = useState<'presencial' | 'remoto' | 'hibrido' | null>(value.formato ?? null);
-  const [nivelExperiencia, setNivelExperiencia] = useState<'iniciante' | 'intermediario' | 'especialista' | null>(value.nivelExperiencia ?? null);
   const [emiteCertificado, setEmiteCertificado] = useState<'sim' | 'nao' | null>(value.emiteCertificado ?? null);
   const [ofereceTreinamento, setOfereceTreinamento] = useState<'sim' | 'nao' | null>(value.ofereceTreinamento ?? null);
 
@@ -52,7 +50,6 @@ export default function ExploreFilters({ value, onChange }: Props) {
     setCausas(value.causas || []);
     setMinVagas(value.minVagas);
     setFormato(value.formato ?? null);
-    setNivelExperiencia(value.nivelExperiencia ?? null);
     setEmiteCertificado(value.emiteCertificado ?? null);
     setOfereceTreinamento(value.ofereceTreinamento ?? null);
   }, [value]);
@@ -67,13 +64,12 @@ export default function ExploreFilters({ value, onChange }: Props) {
       causas,
       minVagas,
       formato,
-      nivelExperiencia,
       emiteCertificado,
       ofereceTreinamento
     });
     try {
       localStorage.setItem('exploreFilters', JSON.stringify({
-        query, skills, minHours, maxHours, location, causas, minVagas, formato, nivelExperiencia, emiteCertificado, ofereceTreinamento
+        query, skills, minHours, maxHours, location, causas, minVagas, formato, emiteCertificado, ofereceTreinamento
       }));
     } catch { }
   }
@@ -88,7 +84,6 @@ export default function ExploreFilters({ value, onChange }: Props) {
     setCausas([]);
     setMinVagas(undefined);
     setFormato(null);
-    setNivelExperiencia(null);
     setEmiteCertificado(null);
     setOfereceTreinamento(null);
 
@@ -102,7 +97,6 @@ export default function ExploreFilters({ value, onChange }: Props) {
       causas: [],
       minVagas: undefined,
       formato: null,
-      nivelExperiencia: null,
       emiteCertificado: null,
       ofereceTreinamento: null
     });
@@ -113,7 +107,7 @@ export default function ExploreFilters({ value, onChange }: Props) {
   }
 
   const hasFilters = query || skills.length > 0 || minHours > 0 || maxHours < 40 || location.length > 0 ||
-    causas.length > 0 || minVagas !== undefined || formato !== null || nivelExperiencia !== null ||
+    causas.length > 0 || minVagas !== undefined || formato !== null ||
     emiteCertificado !== null || ofereceTreinamento !== null;
 
   const activeFiltersCount = [
@@ -124,7 +118,6 @@ export default function ExploreFilters({ value, onChange }: Props) {
     causas.length > 0 ? 1 : 0,
     minVagas ? 1 : 0,
     formato ? 1 : 0,
-    nivelExperiencia ? 1 : 0,
     emiteCertificado ? 1 : 0,
     ofereceTreinamento ? 1 : 0,
   ].reduce((a, b) => a + b, 0);
@@ -247,43 +240,6 @@ export default function ExploreFilters({ value, onChange }: Props) {
               <RadioGroupItem value="hibrido" id="formato-hibrido" />
               <Label htmlFor="formato-hibrido" className="font-normal cursor-pointer flex-1">
                 Híbrido
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
-
-        {/* Nível de Experiência */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Nível de Experiência</Label>
-            {nivelExperiencia && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setNivelExperiencia(null)}
-                className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Limpar
-              </Button>
-            )}
-          </div>
-          <RadioGroup value={nivelExperiencia ?? ''} onValueChange={(val) => setNivelExperiencia(val as any || null)}>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${nivelExperiencia === 'iniciante' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="iniciante" id="nivel-iniciante" />
-              <Label htmlFor="nivel-iniciante" className="font-normal cursor-pointer flex-1">
-                Iniciante
-              </Label>
-            </div>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${nivelExperiencia === 'intermediario' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="intermediario" id="nivel-intermediario" />
-              <Label htmlFor="nivel-intermediario" className="font-normal cursor-pointer flex-1">
-                Intermediário
-              </Label>
-            </div>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${nivelExperiencia === 'especialista' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="especialista" id="nivel-especialista" />
-              <Label htmlFor="nivel-especialista" className="font-normal cursor-pointer flex-1">
-                Especialista
               </Label>
             </div>
           </RadioGroup>
