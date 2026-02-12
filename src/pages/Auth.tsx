@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/hooks/useAuth';
 import { validateCPF, formatCPF } from '@/lib/cpf';
+import { validateCNPJ, formatCNPJ, cleanCNPJ } from '@/lib/cnpj';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +29,7 @@ const signupSchema = z.object({
   confirmPassword: z.string(),
   nome: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
   cpf: z.string().optional(),
+  cnpj: z.string().optional(),
   tipo: z.enum(['voluntario', 'ong']),
   bio: z.string().optional(),
   skills: z.string().optional(),
@@ -42,6 +44,24 @@ const signupSchema = z.object({
 }, {
   message: 'CPF inválido',
   path: ['cpf'],
+}).refine((data) => {
+  if (data.tipo === 'ong') {
+    if (!data.cnpj) return false;
+    console.log('Validating CNPJ:', data.cnpj, 'Length:', data.cnpj.length);
+    // The previous validation might have failed because we were validating the MASKED string (18 chars)
+    // but the error message said "must have 14 digits". 
+    // However, our `validateCNPJ` function (in cnpj.ts) STRIPS non-digits before checking length.
+    // If usage of `cleanCNPJ` is done before validation, then length is 14.
+    // But in the form, the value is MASKED (because of the Controller).
+    // So `data.cnpj` here is "XX.XXX.XXX/XXXX-XX" (18 chars).
+    // `validateCNPJ` handles stripping.
+    // Let's verify `validateCNPJ` logic again.
+    return validateCNPJ(data.cnpj);
+  }
+  return true;
+}, {
+  message: 'CNPJ inválido (verifique os dígitos)',
+  path: ['cnpj'],
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -68,6 +88,7 @@ export default function Auth() {
       confirmPassword: '',
       nome: '',
       cpf: '',
+      cnpj: '',
       tipo: 'voluntario',
       bio: '',
       skills: '',
@@ -106,6 +127,7 @@ export default function Auth() {
       const { error } = await signUp(data.email, data.password, {
         nome: data.nome,
         cpf: data.cpf ? formatCPF(data.cpf) : null,
+        cnpj: data.cnpj ? cleanCNPJ(data.cnpj) : null,
         tipo: data.tipo,
         bio: data.bio || null,
         skills: data.skills || null,
@@ -217,8 +239,8 @@ export default function Auth() {
                     <Label
                       htmlFor="voluntario"
                       className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${userType === 'voluntario'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-muted hover:border-primary/50'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted hover:border-primary/50'
                         }`}
                     >
                       <RadioGroupItem value="voluntario" id="voluntario" className="sr-only" />
@@ -229,8 +251,8 @@ export default function Auth() {
                     <Label
                       htmlFor="ong"
                       className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${userType === 'ong'
-                          ? 'border-secondary bg-secondary/5'
-                          : 'border-muted hover:border-secondary/50'
+                        ? 'border-secondary bg-secondary/5'
+                        : 'border-muted hover:border-secondary/50'
                         }`}
                     >
                       <RadioGroupItem value="ong" id="ong" className="sr-only" />
@@ -268,6 +290,33 @@ export default function Auth() {
                     {signupForm.formState.errors.cpf && (
                       <p className="text-sm text-destructive">
                         {signupForm.formState.errors.cpf.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {userType === 'ong' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Controller
+                      name="cnpj"
+                      control={signupForm.control}
+                      render={({ field: { onChange, value } }) => (
+                        <Input
+                          id="cnpj"
+                          value={value || ''}
+                          placeholder="00.000.000/0000-00"
+                          onChange={(e) => {
+                            const formatted = formatCNPJ(e.target.value);
+                            onChange(formatted);
+                          }}
+                          maxLength={18}
+                        />
+                      )}
+                    />
+                    {signupForm.formState.errors.cnpj && (
+                      <p className="text-sm text-destructive">
+                        {signupForm.formState.errors.cnpj.message}
                       </p>
                     )}
                   </div>
