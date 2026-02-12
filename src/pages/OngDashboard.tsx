@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -36,6 +36,7 @@ import {
   Mail,
   MapPin,
   Star,
+  Search
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
@@ -95,6 +96,9 @@ interface Match {
 export default function OngDashboard() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'opportunities';
+
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,6 +124,10 @@ export default function OngDashboard() {
       location: '',
     },
   });
+
+  const handleTabChange = (value: string) => {
+    setSearchParams({ tab: value });
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -435,7 +443,7 @@ export default function OngDashboard() {
           </Card>
         </div>
 
-        <Tabs defaultValue="opportunities" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             <TabsTrigger value="opportunities" className="gap-2">
               <Briefcase className="h-4 w-4" />
