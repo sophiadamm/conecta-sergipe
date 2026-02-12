@@ -28,7 +28,35 @@ export const PREDEFINED_SKILLS = [
     "Artesanato",
     "Nutrição",
     "Comunicação",
-    "Saúde"
+    "Saúde",
+    "Excel",
+    "PowerPoint",
+    "Word",
+    "Photoshop",
+] as const;
+
+export const PREDEFINED_SOFT_SKILLS = [
+    "Liderança",
+    "Empatia",
+    "Proatividade",
+    "Comunicação",
+    "Trabalho em Equipe",
+    "Criatividade",
+    "Organização",
+    "Flexibilidade",
+    "Resolução de Problemas",
+    "Pensamento Crítico",
+    "Gestão de Tempo",
+    "Adaptabilidade",
+    "Paciência",
+    "Escuta Ativa",
+    "Colaboração",
+    "Responsabilidade",
+    "Comprometimento",
+    "Iniciativa",
+    "Resiliência",
+    "Ética",
 ] as const;
 
 export type Skill = typeof PREDEFINED_SKILLS[number];
+export type SoftSkill = typeof PREDEFINED_SOFT_SKILLS[number];

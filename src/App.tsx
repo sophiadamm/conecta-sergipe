@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import OngDashboard from "./pages/OngDashboard";
+import NewOpportunity from "./pages/NewOpportunity";
 import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import OpportunityDetails from "./pages/OpportunityDetails";
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/voluntario" element={<VolunteerDashboard />} />
             <Route path="/ong" element={<OngDashboard />} />
+            <Route path="/ong/nova-oportunidade" element={<NewOpportunity />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/perfil/:id" element={<PublicProfile />} />
             <Route path="/explorar" element={<Explore />} />
