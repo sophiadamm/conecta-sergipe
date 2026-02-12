@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { StarRating } from '@/components/ui/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, MessageSquare } from 'lucide-react';
+import { ReviewCard } from './ReviewCard';
 
 interface OngReviewsSectionProps {
   reviews: OngReview[];
@@ -92,57 +93,24 @@ export function OngReviewsSection({ reviews, stats, isLoading }: OngReviewsSecti
                 reviews
                   .filter((r) => r.feedback_voluntario?.trim())
                   .map((review) => (
-                    <div
+                    <ReviewCard
                       key={review.id}
-                      className="p-4 border rounded-lg bg-background"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Link to={`/perfil/${review.voluntario_id}`}>
-                          <Avatar className="h-10 w-10">
-                            {review.voluntario?.avatar_url ? (
-                              <AvatarImage
-                                src={review.voluntario.avatar_url}
-                                alt={review.voluntario.nome}
-                              />
-                            ) : null}
-                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                              {review.voluntario?.nome?.charAt(0).toUpperCase() ?? '?'}
-                            </AvatarFallback>
-                          </Avatar>
-                        </Link>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <Link
-                              to={`/perfil/${review.voluntario_id}`}
-                              className="font-medium hover:text-primary transition-colors"
-                            >
-                              {review.voluntario?.nome ?? 'Voluntário'}
-                            </Link>
-                            <StarRating rating={review.rating_voluntario} size="sm" />
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Participou de: {review.opportunity?.titulo ?? 'Oportunidade'} •{' '}
-                            {new Date(review.updated_at).toLocaleDateString('pt-BR', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
-                          </p>
-                          <p className="text-sm leading-relaxed">
-                            {review.feedback_voluntario}
-                          </p>
-                          {review.tags_voluntario && review.tags_voluntario.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {review.tags_voluntario.map((tag) => (
-                                <Badge key={tag} variant="outline" className="text-xs font-normal">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      reviewer={{
+                        id: review.voluntario_id,
+                        name: review.voluntario?.nome ?? 'Voluntário',
+                        avatarUrl: review.voluntario?.avatar_url,
+                      }}
+                      rating={review.rating_voluntario}
+                      date={new Date(review.updated_at).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                      subtitle={`Participou de: ${review.opportunity?.titulo ?? 'Oportunidade'}`}
+                      comment={review.feedback_voluntario}
+                      tags={review.tags_voluntario}
+                      expandLabel="Ver pontos fortes"
+                    />
                   ))
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">

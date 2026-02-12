@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { StarRating } from '@/components/ui/star-rating';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Star, MessageSquare } from 'lucide-react';
+import { ReviewCard } from './ReviewCard';
 
 interface VolunteerReviewsSectionProps {
   reviews: ReviewData[];
@@ -116,53 +117,24 @@ export function VolunteerReviewsSection({ reviews, stats, isLoading }: Volunteer
                 reviews
                   .filter(r => r.comment)
                   .map(review => (
-                    <div
+                    <ReviewCard
                       key={review.id}
-                      className="p-4 border rounded-lg bg-background"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Link to={`/perfil/${review.reviewer.id}`}>
-                          <Avatar className="h-10 w-10">
-                            {review.reviewer.avatar_url ? (
-                              <AvatarImage src={review.reviewer.avatar_url} alt={review.reviewer.nome} />
-                            ) : null}
-                            <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                              {review.reviewer.nome.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                        </Link>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <Link
-                              to={`/perfil/${review.reviewer.id}`}
-                              className="font-medium hover:text-primary transition-colors"
-                            >
-                              {review.reviewer.nome}
-                            </Link>
-                            <StarRating rating={review.rating} size="sm" />
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {review.opportunity_title} • {new Date(review.created_at).toLocaleDateString('pt-BR', {
-                              day: 'numeric',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
-                          </p>
-                          <p className="text-sm leading-relaxed">
-                            {review.comment}
-                          </p>
-                          {review.tags_ong && review.tags_ong.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                              {review.tags_ong.map((tag) => (
-                                <Badge key={tag} variant="outline" className="text-xs font-normal">
-                                  {tag}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      reviewer={{
+                        id: review.reviewer.id,
+                        name: review.reviewer.nome,
+                        avatarUrl: review.reviewer.avatar_url,
+                      }}
+                      rating={review.rating}
+                      date={new Date(review.created_at).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                      subtitle={review.opportunity_title}
+                      comment={review.comment}
+                      tags={review.tags_ong}
+                      expandLabel="Ver competências destacadas"
+                    />
                   ))
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">

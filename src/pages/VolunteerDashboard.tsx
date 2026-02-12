@@ -32,6 +32,7 @@ import {
   Loader2,
   Star,
 } from 'lucide-react';
+import { ReviewCard } from '@/components/profile/ReviewCard';
 
 interface Match {
   id: string;
@@ -42,12 +43,15 @@ interface Match {
   rating: number | null;
   rating_voluntario: number | null;
   tags_voluntario: string[] | null;
+  tags_ong: string[] | null;
+  updated_at: string;
   opportunity: {
     id: string;
     titulo: string;
     descricao: string;
     horas_estimadas: number;
     ong: {
+      id: string;
       nome: string;
     };
   };
@@ -98,13 +102,15 @@ export default function VolunteerDashboard() {
           rating,
           rating_voluntario,
           tags_voluntario,
+          tags_ong,
+          updated_at,
           opportunity_id,
           opportunity:opportunities(
             id,
             titulo,
             descricao,
             horas_estimadas,
-            ong:profiles!opportunities_ong_id_fkey(nome)
+            ong:profiles!opportunities_ong_id_fkey(id, nome)
           )
         `)
         .eq('voluntario_id', profile.id)
@@ -247,11 +253,11 @@ export default function VolunteerDashboard() {
         prev.map((m) =>
           m.id === evaluatingMatch.id
             ? {
-                ...m,
-                rating_voluntario: volunteerReviewData.rating,
-                feedback_voluntario: volunteerReviewData.feedback.trim() || null,
-                tags_voluntario: volunteerReviewData.tags.length > 0 ? volunteerReviewData.tags : null,
-              }
+              ...m,
+              rating_voluntario: volunteerReviewData.rating,
+              feedback_voluntario: volunteerReviewData.feedback.trim() || null,
+              tags_voluntario: volunteerReviewData.tags.length > 0 ? volunteerReviewData.tags : null,
+            }
             : m
         )
       );
@@ -539,7 +545,7 @@ export default function VolunteerDashboard() {
                       {match.status === 'concluido' && (
                         <CardFooter className="border-t pt-4">
                           {match.rating_voluntario != null ||
-                          (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
+                            (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
                             <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
                               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                                 Sua Avaliação
@@ -593,79 +599,24 @@ export default function VolunteerDashboard() {
                 {matches
                   .filter((m) => m.status === 'concluido')
                   .map((match) => (
-                    <Card key={match.id}>
-                      <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-lg">{match.opportunity.ong?.nome}</CardTitle>
-                            <CardDescription className="mt-1">{match.opportunity.titulo}</CardDescription>
-                          </div>
-                          {match.rating && (
-                            <div className="flex flex-col items-end">
-                              <StarRating rating={match.rating} size="sm" />
-                              <span className="text-xs text-muted-foreground mt-1">
-                                {match.rating}/5
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {match.feedback_ong ? (
-                          <div className="bg-muted p-4 rounded-lg relative">
-                            <MessageSquare className="h-4 w-4 text-muted-foreground absolute top-4 left-3" />
-                            <p className="text-sm italic text-muted-foreground pl-5">
-                              "{match.feedback_ong}"
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-muted-foreground italic">
-                            Sem comentário em texto.
-                          </p>
-                        )}
-                        <div className="mt-4 pt-4 border-t flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>{match.horas_validadas || 0} horas validadas</span>
-                        </div>
-                        {/* <div className="mt-4 pt-4 border-t">
-                          {match.rating_voluntario != null ||
-                          (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
-                            <div className="rounded-lg bg-muted/50 p-4 space-y-3">
-                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                Sua Avaliação
-                              </p>
-                              {match.rating_voluntario != null && (
-                                <div className="flex items-center gap-1.5">
-                                  <StarRating rating={match.rating_voluntario} size="sm" />
-                                  <span className="text-sm text-muted-foreground">
-                                    {match.rating_voluntario}/5
-                                  </span>
-                                </div>
-                              )}
-                              {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
-                                <p className="text-sm text-foreground/90">
-                                  {match.feedback_voluntario}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <div className="flex justify-end">
-                              <Button
-                                variant="outline"
-                                className="gap-2"
-                                onClick={() => {
-                                  setEvaluatingMatch(match);
-                                  setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
-                                }}
-                              >
-                                <Star className="h-4 w-4" />
-                                Avaliar Experiência
-                              </Button>
-                            </div>
-                          )}
-                        </div> */}
-                      </CardContent>
-                    </Card>
+                    <ReviewCard
+                      key={match.id}
+                      reviewer={{
+                        id: match.opportunity.ong.id,
+                        name: match.opportunity.ong.nome,
+                        avatarUrl: null, // ONGs usually don't have personal avatars here, or we need to fetch it. For now null is fine as per original design.
+                      }}
+                      rating={match.rating || 0}
+                      date={new Date(match.updated_at).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                      subtitle={match.opportunity.titulo}
+                      comment={match.feedback_ong || undefined}
+                      tags={match.tags_ong}
+                      expandLabel="Ver competências destacadas"
+                    />
                   ))}
               </div>
             )}

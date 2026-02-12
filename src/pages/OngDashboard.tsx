@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import { ReviewCard } from '@/components/profile/ReviewCard';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -741,53 +742,24 @@ export default function OngDashboard() {
             ) : (
               <div className="space-y-4">
                 {ongReviews.map((review) => (
-                  <Card key={review.id}>
-                    <CardHeader>
-                      <div className="flex gap-4">
-                        <Avatar className="h-12 w-12 shrink-0 border">
-                          {review.voluntario?.avatar_url ? (
-                            <AvatarImage src={review.voluntario.avatar_url} alt={review.voluntario.nome} />
-                          ) : null}
-                          <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                            {review.voluntario?.nome?.charAt(0).toUpperCase() ?? '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="text-base flex items-center gap-2 flex-wrap">
-                            <Link
-                              to={`/perfil/${review.voluntario_id}`}
-                              className="hover:text-primary transition-colors underline decoration-dotted underline-offset-2"
-                            >
-                              {review.voluntario?.nome ?? 'Voluntário'}
-                            </Link>
-                            <StarRating rating={review.rating_voluntario} size="sm" />
-                            <span className="text-sm font-normal text-muted-foreground">
-                              {review.rating_voluntario}/5
-                            </span>
-                          </CardTitle>
-                          <CardDescription className="mt-0.5">
-                            {review.opportunity?.titulo ?? 'Oportunidade'}
-                          </CardDescription>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(review.updated_at).toLocaleDateString('pt-BR', {
-                              day: '2-digit',
-                              month: 'long',
-                              year: 'numeric',
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    {review.feedback_voluntario != null && review.feedback_voluntario.trim() !== '' && (
-                      <CardContent className="pt-0">
-                        <div className="bg-muted/50 rounded-lg p-4">
-                          <p className="text-sm text-foreground/90 italic">
-                            "{review.feedback_voluntario}"
-                          </p>
-                        </div>
-                      </CardContent>
-                    )}
-                  </Card>
+                  <ReviewCard
+                    key={review.id}
+                    reviewer={{
+                      id: review.voluntario_id,
+                      name: review.voluntario?.nome ?? 'Voluntário',
+                      avatarUrl: review.voluntario?.avatar_url,
+                    }}
+                    rating={review.rating_voluntario}
+                    date={new Date(review.updated_at).toLocaleDateString('pt-BR', {
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                    subtitle={review.opportunity?.titulo ?? 'Oportunidade'}
+                    comment={review.feedback_voluntario}
+                    tags={review.tags_voluntario}
+                    expandLabel="Ver pontos fortes"
+                  />
                 ))}
               </div>
             )}
