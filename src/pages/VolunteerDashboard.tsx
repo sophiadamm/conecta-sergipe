@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { getRecommendations, RecommendedOpportunity } from '@/lib/recommendation';
@@ -64,6 +64,9 @@ interface Match {
 export default function VolunteerDashboard() {
   const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'recommendations';
+
   const [recommendations, setRecommendations] = useState<RecommendedOpportunity[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
@@ -356,7 +359,11 @@ export default function VolunteerDashboard() {
           </Card>
         </div>
 
-        <Tabs defaultValue="recommendations" className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setSearchParams({ tab: value })}
+          className="space-y-6"
+        >
           <TabsList>
             <TabsTrigger value="recommendations" className="gap-2">
               <Sparkles className="h-4 w-4" />
@@ -424,6 +431,7 @@ export default function VolunteerDashboard() {
                         className="w-full"
                         onClick={() => navigate(`/vaga/${opp.id}`)}
                         variant="secondary"
+                        style={{ cursor: 'pointer' }}
                       >
                         Ver detalhes
                         <ArrowRight className="ml-2 h-4 w-4" />

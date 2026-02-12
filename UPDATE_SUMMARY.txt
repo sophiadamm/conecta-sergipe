@@ -1,0 +1,56 @@
+[UPDATE SUMMARY - 2026-02-12 04:30] NOTIFICATION NAVIGATION REFACTOR
+
+1. OVERVIEW
+   This update refactors the notification navigation system to seamlessly direct users to the 
+   appropriate tab within their dashboards upon clicking a notification. It specifically addresses 
+   review notifications for both Volunteers and ONGs.
+
+2. KEY CHANGES
+   
+   A. Dashboard Navigation Logic:
+      - [VolunteerDashboard.tsx] updated to use `useSearchParams` from `react-router-dom`.
+      - Tabs now sync with the `?tab=` URL parameter.
+      - Default tab behavior preserved if no parameter is present.
+      - Clicking a notification with `?tab=feedbacks` now correctly activates the Feedbacks tab.
+
+   B. Notification Links (SQL):
+      - Updated `notify_reviews` function in migration scripts.
+      - Changed ONG review notification link from `/ong-dashboard?tab=reviews` to `/ong-dashboard?tab=feedbacks` 
+        to match the existing tab identifier in the ONG dashboard component.
+      - Volunteer review notification link confirmed as `/dashboard?tab=feedbacks`.
+
+   C. Consistency:
+      - Ensured that notification types `volunteer_reviewed` and `ong_reviewed` point to valid routes.
+      - Verified that `OngDashboard.tsx` correctly handles the `tab` query parameter.
+
+3. TESTING INSTRUCTIONS
+   
+   1. Run SQL Migration:
+      - Execute `setup_notifications.sql` in Supabase SQL Editor to update the trigger function with correct links.
+   
+   2. Test Volunteer Flow:
+      - Log in as an ONG.
+      - Go to "Em Andamento" tab.
+      - Click "Concluir e Avaliar" on a match.
+      - Log in as the Volunteer.
+      - Check the notification bell.
+      - Click the "Nova avaliação recebida! ⭐" notification.
+      - Verify you are redirected to `/dashboard?tab=feedbacks` and the "Meus Feedbacks" tab is active.
+
+   3. Test ONG Flow:
+      - Log in as a Volunteer.
+      - Go to "Minhas Candidaturas" (concluded match).
+      - Click "Avaliar Experiência".
+      - Log in as the ONG.
+      - Check the notification bell.
+      - Click the "Nova avaliação de voluntário! ⭐" notification.
+      - Verify you are redirected to `/ong-dashboard?tab=feedbacks` and the "Meus Feedbacks" tab is active.
+
+4. FILES MODIFIED
+   - src/pages/VolunteerDashboard.tsx (Added useSearchParams logic)
+   - setup_notifications.sql (Corrected link to ?tab=feedbacks)
+   - supabase/migrations/20260212010000_add_review_notifications.sql (Corrected link to ?tab=feedbacks)
+
+5. NEXT STEPS
+   - Monitor user feedback for any navigation edge cases.
+   - Consider adding a "mark as read" visual indicator on the specific review item if needed in future.

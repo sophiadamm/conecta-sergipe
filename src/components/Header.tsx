@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 import { DummyDataGenerator } from '@/components/DummyDataGenerator';
-import { Heart, LogOut, User, LayoutDashboard, Search, MessageCircle } from 'lucide-react';
+import { Heart, LogOut, User, LayoutDashboard, Search } from 'lucide-react';
 
 export function Header() {
   const { user, profile, signOut } = useAuth();
