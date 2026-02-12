@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Save, Linkedin, Github } from 'lucide-react';
+import { Loader2, Save, Linkedin, Github, ArrowLeft } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
 import { SERGIPE_CITIES } from '@/lib/locations';
@@ -145,6 +145,16 @@ export default function Profile() {
       <Header />
 
       <main className="container py-8 max-w-2xl">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            className="pl-0 gap-2 hover:bg-transparent hover:text-primary transition-colors"
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Voltar
+          </Button>
+        </div>
         <Card>
           <CardHeader className="text-center">
             <Avatar className="h-20 w-20 mx-auto mb-4 border-4 border-primary/20">
