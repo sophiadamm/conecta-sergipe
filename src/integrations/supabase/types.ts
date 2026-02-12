@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversations: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          participant_1: string
+          participant_2: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_1: string
+          participant_2: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          participant_1?: string
+          participant_2?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_participant_1_fkey"
+            columns: ["participant_1"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_participant_2_fkey"
+            columns: ["participant_2"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           created_at: string
@@ -77,72 +119,30 @@ export type Database = {
           },
         ]
       }
-      conversations: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          participant_1: string
-          participant_2: string
-          last_message_at: string
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          participant_1: string
-          participant_2: string
-          last_message_at?: string
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          participant_1?: string
-          participant_2?: string
-          last_message_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "conversations_participant_1_fkey"
-            columns: ["participant_1"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "conversations_participant_2_fkey"
-            columns: ["participant_2"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       messages: {
         Row: {
-          id: string
-          conversation_id: string
-          sender_id: string
           content: string
-          read: boolean
-          created_at: string
+          conversation_id: string
+          created_at: string | null
+          id: string
+          read: boolean | null
+          sender_id: string
         }
         Insert: {
-          id?: string
-          conversation_id: string
-          sender_id: string
           content: string
-          read?: boolean
-          created_at?: string
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id: string
         }
         Update: {
-          id?: string
-          conversation_id?: string
-          sender_id?: string
           content?: string
-          read?: boolean
-          created_at?: string
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          read?: boolean | null
+          sender_id?: string
         }
         Relationships: [
           {
@@ -158,119 +158,39 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
-        ]
-      }
-      opportunities: {
-        Row: {
-          ativa: boolean | null
-          created_at: string
-          descricao: string
-          horas_estimadas: number
-          id: string
-          location: string | null
-          ong_id: string
-          skills_required: string | null
-          titulo: string
-          updated_at: string
-          // New columns
-          causas: string[] | null
-          emite_certificado: boolean | null
-          formato: string | null
-          min_vagas: number | null
-          nivel_experiencia: string | null
-          oferece_treinamento: boolean | null
-          recursos_oferecidos: string | null
-          endereco: string | null
-          bairro: string | null
-          cidade: string | null
-        }
-        Insert: {
-          ativa?: boolean | null
-          created_at?: string
-          descricao: string
-          horas_estimadas?: number
-          id?: string
-          location?: string | null
-          ong_id: string
-          skills_required?: string | null
-          titulo: string
-          updated_at?: string
-          // New columns
-          causas?: string[] | null
-          emite_certificado?: boolean | null
-          formato?: string | null
-          min_vagas?: number | null
-          nivel_experiencia?: string | null
-          oferece_treinamento?: boolean | null
-          recursos_oferecidos?: string | null
-          endereco?: string | null
-          bairro?: string | null
-          cidade?: string | null
-        }
-        Update: {
-          ativa?: boolean | null
-          created_at?: string
-          descricao?: string
-          horas_estimadas?: number
-          id?: string
-          location?: string | null
-          ong_id?: string
-          skills_required?: string | null
-          titulo?: string
-          updated_at?: string
-          // New columns
-          causas?: string[] | null
-          emite_certificado?: boolean | null
-          formato?: string | null
-          min_vagas?: number | null
-          nivel_experiencia?: string | null
-          oferece_treinamento?: boolean | null
-          recursos_oferecidos?: string | null
-          endereco?: string | null
-          bairro?: string | null
-          cidade?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "opportunities_ong_id_fkey"
-            columns: ["ong_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
           },
         ]
       }
       notifications: {
         Row: {
-          id: string
-          user_id: string
-          title: string
-          message: string
-          type: string
-          link: string
-          is_read: boolean
           created_at: string
+          id: string
+          is_read: boolean
+          link: string
+          message: string
+          title: string
+          type: string
+          user_id: string
         }
         Insert: {
-          id?: string
-          user_id: string
-          title: string
-          message: string
-          type: string
-          link: string
-          is_read?: boolean
           created_at?: string
+          id?: string
+          is_read?: boolean
+          link: string
+          message: string
+          title: string
+          type: string
+          user_id: string
         }
         Update: {
-          id?: string
-          user_id?: string
-          title?: string
-          message?: string
-          type?: string
-          link?: string
-          is_read?: boolean
           created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string
+          message?: string
+          title?: string
+          type?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -282,12 +202,93 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          ativa: boolean | null
+          bairro: string | null
+          causas: string[] | null
+          cidade: string | null
+          created_at: string
+          descricao: string
+          embedding: string | null
+          emite_certificado: boolean | null
+          endereco: string | null
+          formato: string | null
+          horas_estimadas: number
+          id: string
+          location: string | null
+          min_vagas: number | null
+          nivel_experiencia: string | null
+          oferece_treinamento: boolean | null
+          ong_id: string
+          recursos_oferecidos: string | null
+          skills_required: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean | null
+          bairro?: string | null
+          causas?: string[] | null
+          cidade?: string | null
+          created_at?: string
+          descricao: string
+          embedding?: string | null
+          emite_certificado?: boolean | null
+          endereco?: string | null
+          formato?: string | null
+          horas_estimadas?: number
+          id?: string
+          location?: string | null
+          min_vagas?: number | null
+          nivel_experiencia?: string | null
+          oferece_treinamento?: boolean | null
+          ong_id: string
+          recursos_oferecidos?: string | null
+          skills_required?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean | null
+          bairro?: string | null
+          causas?: string[] | null
+          cidade?: string | null
+          created_at?: string
+          descricao?: string
+          embedding?: string | null
+          emite_certificado?: boolean | null
+          endereco?: string | null
+          formato?: string | null
+          horas_estimadas?: number
+          id?: string
+          location?: string | null
+          min_vagas?: number | null
+          nivel_experiencia?: string | null
+          oferece_treinamento?: boolean | null
+          ong_id?: string
+          recursos_oferecidos?: string | null
+          skills_required?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_ong_id_fkey"
+            columns: ["ong_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           cpf: string | null
           created_at: string
+          embedding: string | null
           experience_level: string | null
           github_url: string | null
           id: string
@@ -304,6 +305,7 @@ export type Database = {
           bio?: string | null
           cpf?: string | null
           created_at?: string
+          embedding?: string | null
           experience_level?: string | null
           github_url?: string | null
           id?: string
@@ -320,6 +322,7 @@ export type Database = {
           bio?: string | null
           cpf?: string | null
           created_at?: string
+          embedding?: string | null
           experience_level?: string | null
           github_url?: string | null
           id?: string
@@ -385,12 +388,61 @@ export type Database = {
           },
         ]
       }
+      v_sender_profile_id: {
+        Row: {
+          id: string | null
+        }
+        Insert: {
+          id?: string | null
+        }
+        Update: {
+          id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_new_conversation: {
+        Args: { other_user_id: string }
+        Returns: string
+      }
+      mark_messages_as_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
+      match_opportunities: {
+        Args: { p_limit?: number; p_user_embedding?: string; p_user_id: string }
+        Returns: {
+          descricao: string
+          horas_estimadas: number
+          id: string
+          location: string
+          location_bonus: number
+          ong_id: string
+          ong_nome: string
+          score: number
+          semantic_score: number
+          skills_required: string
+          titulo: string
+        }[]
+      }
+      send_message:
+        | { Args: { p_content: string; p_recipient_id: string }; Returns: Json }
+        | {
+            Args: {
+              p_content: string
+              p_conversation_id?: string
+              p_recipient_id: string
+            }
+            Returns: Json
+          }
+      send_message_secure: {
+        Args: { p_content: string; p_recipient_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       match_status: "pendente" | "aprovado" | "concluido" | "rejeitado"
@@ -408,116 +460,116 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
   public: {
