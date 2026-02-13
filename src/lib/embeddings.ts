@@ -11,10 +11,11 @@ function getEmbedder(): Promise<any> {
   return embedderPromise;
 }
 
-export function buildProfileText(profile: { nome?: string | null; bio?: string | null; skills?: string | null }): string {
+export function buildProfileText(profile: { nome?: string | null; bio?: string | null; skills?: string | null; interests?: string | null }): string {
   const parts: string[] = [];
   if (profile.nome) parts.push(`Nome: ${profile.nome}`);
   if (profile.skills) parts.push(`Habilidades: ${profile.skills}`);
+  if (profile.interests) parts.push(`Interesses: ${profile.interests}`);
   if (profile.bio) parts.push(`Bio: ${profile.bio}`);
   return parts.join(' | ');
 }
