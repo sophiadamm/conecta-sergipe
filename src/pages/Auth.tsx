@@ -13,10 +13,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Heart, Loader2, Building2, User } from 'lucide-react';
+import { Heart, Loader2, Building2, User, Linkedin, Github } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
 import { PREDEFINED_CAUSES } from '@/lib/causes';
+import { SERGIPE_CITIES } from '@/lib/locations';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -32,17 +33,44 @@ const signupSchema = z.object({
   tipo: z.enum(['voluntario', 'ong']),
   bio: z.string().optional(),
   skills: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: 'Senhas não conferem',
-  path: ['confirmPassword'],
-}).refine((data) => {
-  if (data.tipo === 'voluntario' && data.cpf) {
-    return validateCPF(data.cpf);
+  interests: z.string().optional(),
+  locations: z.string().optional(),
+  linkedin_url: z.string().url('URL inválida').optional().or(z.literal('')),
+  github_url: z.string().url('URL inválida').optional().or(z.literal('')),
+}).superRefine((data, ctx) => {
+  if (data.password !== data.confirmPassword) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Senhas não conferem',
+      path: ['confirmPassword'],
+    });
   }
-  return true;
-}, {
-  message: 'CPF inválido',
-  path: ['cpf'],
+
+  if (data.tipo === 'voluntario') {
+    if (data.cpf && !validateCPF(data.cpf)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'CPF inválido',
+        path: ['cpf'],
+      });
+    }
+
+    if (!data.locations || data.locations.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Localização é obrigatória',
+        path: ['locations'],
+      });
+    }
+
+    if (!data.interests || data.interests.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Selecione pelo menos uma área de interesse',
+        path: ['interests'],
+      });
+    }
+  }
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -72,6 +100,10 @@ export default function Auth() {
       tipo: 'voluntario',
       bio: '',
       skills: '',
+      interests: '',
+      locations: '',
+      linkedin_url: '',
+      github_url: '',
     },
   });
 
@@ -110,6 +142,10 @@ export default function Auth() {
         tipo: data.tipo,
         bio: data.bio || null,
         skills: data.skills || null,
+        interests: data.interests || null,
+        locations: data.locations ? data.locations.split(',').map(l => l.trim()).filter(Boolean) : null,
+        linkedin_url: data.linkedin_url || null,
+        github_url: data.github_url || null,
       });
 
       if (error) {
@@ -353,6 +389,96 @@ export default function Auth() {
                     )}
                   />
                 </div>
+
+                {userType === 'voluntario' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="locations">Onde você pode atuar?</Label>
+                      <Controller
+                        name="locations"
+                        control={signupForm.control}
+                        render={({ field }) => (
+                          <MultiSelect
+                            options={SERGIPE_CITIES as unknown as string[]}
+                            selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                            onChange={(selected) => field.onChange(selected.join(','))}
+                            placeholder="Selecione as cidades..."
+                            className="bg-background"
+                          />
+                        )}
+                      />
+                      {signupForm.formState.errors.locations && (
+                        <p className="text-sm text-destructive">
+                          {signupForm.formState.errors.locations.message}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Selecione as cidades de Sergipe onde você pode atuar.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="interests">Áreas de Interesse</Label>
+                      <Controller
+                        name="interests"
+                        control={signupForm.control}
+                        render={({ field }) => (
+                          <MultiSelect
+                            options={Object.values(PREDEFINED_CAUSES)}
+                            selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                            onChange={(selected) => field.onChange(selected.join(','))}
+                            placeholder="Selecione as causas..."
+                            className="bg-background"
+                          />
+                        )}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Causas que você tem interesse em apoiar.
+                      </p>
+                      {signupForm.formState.errors.interests && (
+                        <p className="text-sm text-destructive">
+                          {signupForm.formState.errors.interests.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="linkedin_url" className="flex items-center gap-2">
+                          <Linkedin className="h-4 w-4" />
+                          LinkedIn
+                        </Label>
+                        <Input
+                          id="linkedin_url"
+                          placeholder="Link do perfil"
+                          {...signupForm.register('linkedin_url')}
+                        />
+                        {signupForm.formState.errors.linkedin_url && (
+                          <p className="text-sm text-destructive">
+                            {signupForm.formState.errors.linkedin_url.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="github_url" className="flex items-center gap-2">
+                          <Github className="h-4 w-4" />
+                          GitHub
+                        </Label>
+                        <Input
+                          id="github_url"
+                          placeholder="Link do perfil"
+                          {...signupForm.register('github_url')}
+                        />
+                        {signupForm.formState.errors.github_url && (
+                          <p className="text-sm text-destructive">
+                            {signupForm.formState.errors.github_url.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? (

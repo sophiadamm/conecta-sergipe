@@ -115,6 +115,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tipo: profileData.tipo || 'voluntario',
         bio: profileData.bio || null,
         skills: profileData.skills || null,
+        interests: profileData.interests || null,
+        locations: profileData.locations || null,
+        linkedin_url: profileData.linkedin_url || null,
+        github_url: profileData.github_url || null,
       });
 
       if (profileError) {

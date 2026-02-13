@@ -1,62 +1,31 @@
 
 export const PREDEFINED_SKILLS = [
-    "JavaScript",
-    "React",
-    "TypeScript",
-    "Python",
-    "Java",
-    "HTML/CSS",
-    "Design",
-    "Marketing",
-    "Vendas",
-    "Gestão de Projetos",
-    "Redes Sociais",
-    "Edição de Vídeo",
-    "Fotografia",
-    "Ensino",
-    "Redação",
-    "Tradução",
-    "Psicologia",
-    "Enfermagem",
-    "Direito",
-    "Contabilidade",
-    "Assistência Social",
-    "Meio Ambiente",
-    "Agricultura",
-    "Logística",
-    "Culinária",
-    "Artesanato",
-    "Nutrição",
-    "Comunicação",
-    "Saúde",
-    "Excel",
-    "PowerPoint",
-    "Word",
-    "Photoshop",
+    // Tech & Design
+    "Programação", "Design Gráfico", "Edição de Vídeo", "Informática",
+    "Redes Sociais", "Marketing Digital", "Excel/Planilhas", "Suporte Técnico",
+
+    // Educação & Idiomas
+    "Ensino/Tutoria", "Matemática", "Português", "Inglês", "Alfabetização",
+    "Contação de Histórias", "Tradução", "Libras", "Produção Textual",
+
+    // Saúde & Cuidado
+    "Psicologia", "Enfermagem", "Nutrição", "Cuidador de Idosos",
+    "Primeiros Socorros", "Fisioterapia", "Odontologia",
+
+    // Mão na Massa & Logística
+    "Culinária", "Motorista (CNH B)", "Pintura", "Carpintaria",
+    "Limpeza e Organização", "Logística", "Jardinagem", "Costura",
+
+    // Administrativo & Jurídico
+    "Gestão de Projetos", "Contabilidade", "Direito/Jurídico",
+    "Captação de Recursos", "Organização de Eventos", "Secretariado",
+
+    // Arte & Cultura
+    "Música/Instrumento", "Dança", "Teatro", "Artesanato", "Fotografia",
+
+    //Softskills
+    "Comunicação", "Oratória"
 ] as const;
 
-export const PREDEFINED_SOFT_SKILLS = [
-    "Liderança",
-    "Empatia",
-    "Proatividade",
-    "Comunicação",
-    "Trabalho em Equipe",
-    "Criatividade",
-    "Organização",
-    "Flexibilidade",
-    "Resolução de Problemas",
-    "Pensamento Crítico",
-    "Gestão de Tempo",
-    "Adaptabilidade",
-    "Paciência",
-    "Escuta Ativa",
-    "Colaboração",
-    "Responsabilidade",
-    "Comprometimento",
-    "Iniciativa",
-    "Resiliência",
-    "Ética",
-] as const;
 
 export type Skill = typeof PREDEFINED_SKILLS[number];
-export type SoftSkill = typeof PREDEFINED_SOFT_SKILLS[number];
