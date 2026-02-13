@@ -58,6 +58,7 @@ export type Database = {
       }
       matches: {
         Row: {
+          certificate_issued_at: string | null
           created_at: string
           feedback_ong: string | null
           feedback_voluntario: string | null
@@ -73,6 +74,7 @@ export type Database = {
           voluntario_id: string
         }
         Insert: {
+          certificate_issued_at?: string | null
           created_at?: string
           feedback_ong?: string | null
           feedback_voluntario?: string | null
@@ -88,6 +90,7 @@ export type Database = {
           voluntario_id: string
         }
         Update: {
+          certificate_issued_at?: string | null
           created_at?: string
           feedback_ong?: string | null
           feedback_voluntario?: string | null
@@ -166,7 +169,7 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean
-          link: string
+          link: string | null
           message: string
           title: string
           type: string
@@ -176,7 +179,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
-          link: string
+          link?: string | null
           message: string
           title: string
           type: string
@@ -186,7 +189,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
-          link?: string
+          link?: string | null
           message?: string
           title?: string
           type?: string
@@ -218,6 +221,7 @@ export type Database = {
           id: string
           location: string | null
           min_vagas: number | null
+          nivel_experiencia: string | null
           oferece_treinamento: boolean | null
           ong_id: string
           recursos_oferecidos: string | null
@@ -240,6 +244,7 @@ export type Database = {
           id?: string
           location?: string | null
           min_vagas?: number | null
+          nivel_experiencia?: string | null
           oferece_treinamento?: boolean | null
           ong_id: string
           recursos_oferecidos?: string | null
@@ -262,6 +267,7 @@ export type Database = {
           id?: string
           location?: string | null
           min_vagas?: number | null
+          nivel_experiencia?: string | null
           oferece_treinamento?: boolean | null
           ong_id?: string
           recursos_oferecidos?: string | null
@@ -283,11 +289,14 @@ export type Database = {
         Row: {
           avatar_url: string | null
           bio: string | null
+          cnpj: string | null
           cpf: string | null
           created_at: string
           embedding: string | null
+          experience_level: string | null
           github_url: string | null
           id: string
+          interests: string | null
           linkedin_url: string | null
           locations: string[] | null
           nome: string
@@ -299,11 +308,14 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           bio?: string | null
+          cnpj?: string | null
           cpf?: string | null
           created_at?: string
           embedding?: string | null
+          experience_level?: string | null
           github_url?: string | null
           id?: string
+          interests?: string | null
           linkedin_url?: string | null
           locations?: string[] | null
           nome: string
@@ -315,11 +327,14 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           bio?: string | null
+          cnpj?: string | null
           cpf?: string | null
           created_at?: string
           embedding?: string | null
+          experience_level?: string | null
           github_url?: string | null
           id?: string
+          interests?: string | null
           linkedin_url?: string | null
           locations?: string[] | null
           nome?: string
@@ -403,26 +418,54 @@ export type Database = {
         Args: { other_user_id: string }
         Returns: string
       }
+      delete_opportunity_and_notify: {
+        Args: { p_opportunity_id: string }
+        Returns: Json
+      }
       mark_messages_as_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
       }
-      match_opportunities: {
-        Args: { p_limit?: number; p_user_embedding?: string; p_user_id: string }
-        Returns: {
-          descricao: string
-          horas_estimadas: number
-          id: string
-          location: string
-          location_bonus: number
-          ong_id: string
-          ong_nome: string
-          score: number
-          semantic_score: number
-          skills_required: string
-          titulo: string
-        }[]
-      }
+      match_opportunities:
+        | {
+            Args: {
+              p_limit?: number
+              p_user_embedding?: string
+              p_user_id: string
+            }
+            Returns: {
+              descricao: string
+              horas_estimadas: number
+              id: string
+              interests_bonus: number
+              location: string
+              ong_id: string
+              ong_nome: string
+              score: number
+              semantic_score: number
+              skills_bonus: number
+              skills_required: string
+              titulo: string
+            }[]
+          }
+        | {
+            Args: {
+              match_count: number
+              match_threshold: number
+              query_embedding: string
+              user_id_param: string
+            }
+            Returns: {
+              causas: string[]
+              descricao: string
+              id: string
+              location: string
+              score: number
+              similarity: number
+              skills_required: string
+              titulo: string
+            }[]
+          }
       send_message:
         | { Args: { p_content: string; p_recipient_id: string }; Returns: Json }
         | {
