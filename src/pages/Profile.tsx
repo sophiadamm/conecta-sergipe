@@ -18,6 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, Save, Linkedin, Github, ArrowLeft } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import { PREDEFINED_CAUSES } from '@/lib/causes';
 import { SERGIPE_CITIES } from '@/lib/locations';
 
 const profileSchema = z.object({
@@ -213,22 +214,22 @@ export default function Profile() {
 
               <div className="space-y-2">
                 <Label htmlFor="skills">
-                  {profile.tipo === 'ong' ? 'Áreas de atuação' : 'Habilidades'}
+                  {profile.tipo === 'ong' ? 'Áreas de Atuação / Causas' : 'Habilidades / Skills'}
                 </Label>
                 <Controller
                   name="skills"
                   control={form.control}
                   render={({ field }) => (
                     <MultiSelect
-                      options={Object.values(PREDEFINED_SKILLS)}
+                      options={profile.tipo === 'ong' ? Object.values(PREDEFINED_CAUSES) : Object.values(PREDEFINED_SKILLS)}
                       selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
                       onChange={(selected) => field.onChange(selected.join(','))}
-                      placeholder="Selecione as habilidades..."
+                      placeholder={profile.tipo === 'ong' ? "Selecione as causas..." : "Selecione as habilidades..."}
                     />
                   )}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Selecione as habilidades que você possui ou busca.
+                  {profile.tipo === 'ong' ? 'Selecione as causas que sua ONG apoia.' : 'Selecione as habilidades que você possui ou busca.'}
                 </p>
               </div>
 

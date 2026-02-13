@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Heart, Loader2, Building2, User } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import { PREDEFINED_CAUSES } from '@/lib/causes';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -217,8 +218,8 @@ export default function Auth() {
                     <Label
                       htmlFor="voluntario"
                       className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${userType === 'voluntario'
-                          ? 'border-primary bg-primary/5'
-                          : 'border-muted hover:border-primary/50'
+                        ? 'border-primary bg-primary/5'
+                        : 'border-muted hover:border-primary/50'
                         }`}
                     >
                       <RadioGroupItem value="voluntario" id="voluntario" className="sr-only" />
@@ -229,8 +230,8 @@ export default function Auth() {
                     <Label
                       htmlFor="ong"
                       className={`flex flex-col items-center justify-center rounded-lg border-2 p-4 cursor-pointer transition-all ${userType === 'ong'
-                          ? 'border-secondary bg-secondary/5'
-                          : 'border-muted hover:border-secondary/50'
+                        ? 'border-secondary bg-secondary/5'
+                        : 'border-muted hover:border-secondary/50'
                         }`}
                     >
                       <RadioGroupItem value="ong" id="ong" className="sr-only" />
@@ -336,17 +337,17 @@ export default function Auth() {
 
                 <div className="space-y-2">
                   <Label htmlFor="skills">
-                    {userType === 'ong' ? 'Áreas de atuação' : 'Habilidades'}
+                    {userType === 'ong' ? 'Áreas de Atuação / Causas' : 'Habilidades / Skills'}
                   </Label>
                   <Controller
                     name="skills"
                     control={signupForm.control}
                     render={({ field }) => (
                       <MultiSelect
-                        options={Object.values(PREDEFINED_SKILLS)}
+                        options={userType === 'ong' ? Object.values(PREDEFINED_CAUSES) : Object.values(PREDEFINED_SKILLS)}
                         selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
                         onChange={(selected) => field.onChange(selected.join(','))}
-                        placeholder="Selecione as habilidades..."
+                        placeholder={userType === 'ong' ? "Selecione as causas..." : "Selecione as habilidades..."}
                         className="bg-background"
                       />
                     )}
