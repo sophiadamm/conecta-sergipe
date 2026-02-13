@@ -33,6 +33,8 @@ import {
   Star,
   MapPin,
   Trash2,
+  Award,
+  Download,
 } from 'lucide-react';
 
 import { ReviewCard } from '@/components/profile/ReviewCard';
@@ -59,6 +61,7 @@ interface Match {
   tags_voluntario: string[] | null;
   tags_ong: string[] | null;
   updated_at: string;
+  certificate_issued_at: string | null;
   opportunity: {
     id: string;
     titulo: string;
@@ -88,6 +91,8 @@ export default function VolunteerDashboard() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [matchToCancel, setMatchToCancel] = useState<string | null>(null);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [certificateMatch, setCertificateMatch] = useState<Match | null>(null);
+  const [isGeneratingCertificate, setIsGeneratingCertificate] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -124,6 +129,7 @@ export default function VolunteerDashboard() {
           tags_voluntario,
           tags_ong,
           updated_at,
+          certificate_issued_at,
           opportunity_id,
           opportunity:opportunities(
             id,
@@ -171,7 +177,7 @@ export default function VolunteerDashboard() {
       // Filtrar recomendações:
       // 1. Excluir oportunidades para as quais o voluntário já se candidatou
       // 2. Aplicar threshold mínimo de 0.4 (40% de match) para garantir qualidade
-      const filteredRecs = (recs || []).filter((r: any) => 
+      const filteredRecs = (recs || []).filter((r: any) =>
         !appliedOpportunityIds.has(r.id) && (r.score || 0) >= 0.4
       );
 
@@ -321,6 +327,52 @@ export default function VolunteerDashboard() {
       setIsCancelling(false);
       setMatchToCancel(null);
     }
+  };
+
+  const handleGenerateCertificate = async (match: Match) => {
+    setIsGeneratingCertificate(true);
+    try {
+      // Update database to mark certificate as issued
+      const { error } = await supabase
+        .from('matches')
+        .update({ certificate_issued_at: new Date().toISOString() } as any)
+        .eq('id', match.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setMatches((prev) =>
+        prev.map((m) =>
+          m.id === match.id
+            ? { ...m, certificate_issued_at: new Date().toISOString() }
+            : m
+        )
+      );
+
+      // TODO: Implement actual certificate generation/download logic here
+      console.log('Generating certificate for:', match);
+
+      // Show success modal
+      setCertificateMatch(match);
+    } catch (error) {
+      console.error('Error generating certificate:', error);
+      toast({
+        title: 'Erro ao emitir certificado',
+        description: 'Não foi possível emitir o certificado. Tente novamente.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingCertificate(false);
+    }
+  };
+
+  const handleDownloadCertificate = (match: Match) => {
+    // TODO: Implement certificate download logic
+    console.log('Downloading certificate for:', match);
+    toast({
+      title: 'Download iniciado',
+      description: 'Seu certificado está sendo baixado.',
+    });
   };
 
   if (authLoading || loading) {
@@ -602,43 +654,90 @@ export default function VolunteerDashboard() {
                         </p>
                       </CardContent>
                       {(match.status === 'concluido' || match.status === 'pendente') && (
-                        <CardFooter className="border-t pt-4">
+                        <CardFooter className="border-t pt-4 flex-col gap-3">
                           {match.status === 'concluido' && (
-                            match.rating_voluntario != null ||
-                              (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
-                              <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
-                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                                  Sua Avaliação
-                                </p>
-                                {match.rating_voluntario != null && (
-                                  <div className="flex items-center gap-1.5">
-                                    <StarRating rating={match.rating_voluntario} size="sm" />
-                                    <span className="text-sm text-muted-foreground">
-                                      {match.rating_voluntario}/5
-                                    </span>
-                                  </div>
-                                )}
-                                {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
-                                  <p className="text-sm text-foreground/90">
-                                    {match.feedback_voluntario}
+                            <>
+                              {/* Certificate Button Logic */}
+                              {!match.certificate_issued_at ? (
+                                <div className="flex w-full justify-end">
+                                  <Button
+                                    className="gap-2"
+                                    onClick={() => handleGenerateCertificate(match)}
+                                    disabled={isGeneratingCertificate}
+                                    size="sm"
+                                  >
+                                    {isGeneratingCertificate ? (
+                                      <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        Emitindo...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Award className="h-4 w-4" />
+                                        Emitir Certificado
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="w-full flex flex-col items-end gap-1">
+                                  <Button
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={() => handleDownloadCertificate(match)}
+                                    size="sm"
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    Baixar Novamente
+                                  </Button>
+                                  <p className="text-[10px] text-muted-foreground mr-1">
+                                    Emitido em{' '}
+                                    {new Date(match.certificate_issued_at).toLocaleDateString('pt-BR', {
+                                      day: '2-digit',
+                                      month: '2-digit',
+                                      year: 'numeric',
+                                    })}
                                   </p>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="flex w-full justify-end">
-                                <Button
-                                  variant="outline"
-                                  className="gap-2"
-                                  onClick={() => {
-                                    setEvaluatingMatch(match);
-                                    setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
-                                  }}
-                                >
-                                  <Star className="h-4 w-4" />
-                                  Avaliar Experiência
-                                </Button>
-                              </div>
-                            )
+                                </div>
+                              )}
+
+                              {/* Volunteer Review Section */}
+                              {match.rating_voluntario != null ||
+                                (match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '') ? (
+                                <div className="w-full rounded-lg bg-muted/50 p-4 space-y-3">
+                                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                    Sua Avaliação
+                                  </p>
+                                  {match.rating_voluntario != null && (
+                                    <div className="flex items-center gap-1.5">
+                                      <StarRating rating={match.rating_voluntario} size="sm" />
+                                      <span className="text-sm text-muted-foreground">
+                                        {match.rating_voluntario}/5
+                                      </span>
+                                    </div>
+                                  )}
+                                  {match.feedback_voluntario != null && match.feedback_voluntario.trim() !== '' && (
+                                    <p className="text-sm text-foreground/90">
+                                      {match.feedback_voluntario}
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex w-full justify-end">
+                                  <Button
+                                    variant="outline"
+                                    className="gap-2"
+                                    onClick={() => {
+                                      setEvaluatingMatch(match);
+                                      setVolunteerReviewData({ rating: 5, feedback: '', tags: [] });
+                                    }}
+                                  >
+                                    <Star className="h-4 w-4" />
+                                    Avaliar Experiência
+                                  </Button>
+                                </div>
+                              )}
+                            </>
                           )}
 
                           {match.status === 'pendente' && (
@@ -844,8 +943,52 @@ export default function VolunteerDashboard() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        </Tabs >
-      </main >
-    </div >
+
+          {/* Modal de Sucesso - Certificado Emitido */}
+          <Dialog
+            open={!!certificateMatch}
+            onOpenChange={(open) => {
+              if (!open) setCertificateMatch(null);
+            }}
+          >
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <div className="flex justify-center mb-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+                    <Award className="h-8 w-8 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <DialogTitle className="text-center text-2xl">Parabéns!</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-center text-muted-foreground">
+                  Seu certificado foi emitido com sucesso e o download iniciará em instantes.
+                  Você pode baixá-lo novamente a qualquer momento.
+                </p>
+                {certificateMatch && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="font-medium text-sm">{certificateMatch.opportunity.titulo}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {certificateMatch.opportunity.ong?.nome}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {certificateMatch.horas_validadas}h de trabalho voluntário
+                    </p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  className="w-full"
+                  onClick={() => setCertificateMatch(null)}
+                >
+                  Fechar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </Tabs>
+      </main>
+    </div>
   );
 }
