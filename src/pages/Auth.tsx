@@ -79,7 +79,7 @@ type SignupFormData = z.infer<typeof signupSchema>;
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
+  const { user, profile, signIn, signUp, loading: authLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,9 +111,14 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/dashboard');
+      if (profile) {
+        navigate('/dashboard');
+      } else {
+        // User exists but no profile — sign out to clear orphan session
+        signOut();
+      }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, profile, authLoading, navigate, signOut]);
 
   const handleLogin = async (data: LoginFormData) => {
     setError(null);
