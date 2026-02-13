@@ -190,10 +190,6 @@ export default function OpportunityDetails() {
         ? opportunity.skills_required.split(',').map(s => s.trim()).filter(Boolean)
         : [];
 
-    const recursos = opportunity.recursos_oferecidos
-        ? opportunity.recursos_oferecidos.split(',').map(r => r.trim()).filter(Boolean)
-        : [];
-
     const FormatoIcon = opportunity.formato ? FORMATO_ICONS[opportunity.formato] : MapPin;
 
     return (
@@ -424,19 +420,14 @@ export default function OpportunityDetails() {
                                     )}
                                 </div>
 
-                                {recursos.length > 0 && (
+                                {opportunity.recursos_oferecidos && opportunity.recursos_oferecidos.trim() && (
                                     <>
                                         <Separator />
                                         <div>
-                                            <p className="font-semibold mb-3 text-sm">Recursos Oferecidos</p>
-                                            <ul className="space-y-2">
-                                                {recursos.map((recurso, idx) => (
-                                                    <li key={idx} className="flex items-center gap-2 text-muted-foreground">
-                                                        <Check className="h-4 w-4 text-primary" />
-                                                        <span>{recurso}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
+                                            <p className="font-semibold mb-2 text-sm">Recursos Disponibilizados</p>
+                                            <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                                                {opportunity.recursos_oferecidos}
+                                            </p>
                                         </div>
                                     </>
                                 )}

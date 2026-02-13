@@ -943,17 +943,12 @@ export default function NewOpportunity() {
                                 <Label htmlFor="recursosOferecidos">
                                     Recursos disponibilizados para o voluntário <span className="text-muted-foreground text-xs">(Opcional)</span>
                                 </Label>
-                                <Controller
-                                    name="recursosOferecidos"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <MultiSelect
-                                            options={RECURSOS_OPCOES}
-                                            selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
-                                            onChange={(selected) => field.onChange(selected.join(','))}
-                                            placeholder="Selecione os recursos oferecidos..."
-                                        />
-                                    )}
+                                <Textarea
+                                    id="recursosOferecidos"
+                                    placeholder="Descreva os recursos que a ONG oferece (ex: transporte, alimentação, equipamentos, ajuda de custo, etc.)"
+                                    rows={3}
+                                    {...form.register('recursosOferecidos')}
+                                    className="transition-all focus:ring-2 focus:ring-primary resize-none"
                                 />
                                 <p className="text-sm text-muted-foreground">
                                     Recursos como transporte, alimentação ou equipamentos tornam a vaga mais atrativa
