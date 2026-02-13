@@ -17,6 +17,9 @@ export default function Dashboard() {
         } else if (profile.tipo === 'ong') {
           navigate('/ong');
         }
+      } else {
+        // User exists but no profile — orphan state, redirect to auth
+        navigate('/auth');
       }
     }
   }, [user, profile, loading, navigate]);
