@@ -10,6 +10,7 @@ interface Profile {
   tipo: 'voluntario' | 'ong';
   bio: string | null;
   skills: string | null;
+  interests: string | null;
   avatar_url: string | null;
   linkedin_url: string | null;
   github_url: string | null;

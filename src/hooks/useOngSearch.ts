@@ -7,7 +7,7 @@ export interface OngSearchResult {
     bio: string | null;
     avatar_url: string | null;
     locations: string[] | null;
-    skills: string[] | null; // Updated to array assuming .contains usage implies array column
+    skills: string | null;
 }
 
 export interface SearchFilters {
@@ -42,8 +42,12 @@ export function useOngSearch(filters: SearchFilters) {
 
             // Apply category/skills filter (area of activity)
             if (filters.causes && filters.causes.length > 0) {
-                // Using .contains as requested for tags
-                query = query.contains('skills', filters.causes);
+                // Since 'skills' is stored as a TEXT column (comma-separated), 
+                // we use .ilike() with OR logic instead of .contains() (which is for Arrays).
+                const orConditions = filters.causes
+                    .map(cause => `skills.ilike.%${cause.trim()}%`)
+                    .join(',');
+                query = query.or(orConditions);
             }
 
             const { data, error } = await query.limit(50);

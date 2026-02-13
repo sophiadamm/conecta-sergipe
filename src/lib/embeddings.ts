@@ -11,19 +11,28 @@ function getEmbedder(): Promise<any> {
   return embedderPromise;
 }
 
-export function buildProfileText(profile: { nome?: string | null; bio?: string | null; skills?: string | null }): string {
+export function buildProfileText(profile: { nome?: string | null; bio?: string | null; skills?: string | null; interests?: string | null }): string {
   const parts: string[] = [];
   if (profile.nome) parts.push(`Nome: ${profile.nome}`);
   if (profile.skills) parts.push(`Habilidades: ${profile.skills}`);
+  if (profile.interests) parts.push(`Interesses: ${profile.interests}`);
   if (profile.bio) parts.push(`Bio: ${profile.bio}`);
   return parts.join(' | ');
 }
 
-export function buildOpportunityText(opportunity: { titulo?: string | null; descricao?: string | null; skills_required?: string | null }): string {
+export function buildOpportunityText(opportunity: { titulo?: string | null; descricao?: string | null; skills_required?: string | null; causas?: string | string[] | null }): string {
   const parts: string[] = [];
   if (opportunity.titulo) parts.push(`Título: ${opportunity.titulo}`);
   if (opportunity.descricao) parts.push(`Descrição: ${opportunity.descricao}`);
   if (opportunity.skills_required) parts.push(`Habilidades necessárias: ${opportunity.skills_required}`);
+
+  if (opportunity.causas) {
+    const causasStr = Array.isArray(opportunity.causas)
+      ? opportunity.causas.join(', ')
+      : opportunity.causas;
+    parts.push(`Causas: ${causasStr}`);
+  }
+
   return parts.join(' | ');
 }
 

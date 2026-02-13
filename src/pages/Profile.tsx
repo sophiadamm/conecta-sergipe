@@ -18,6 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import { Loader2, Save, Linkedin, Github, ArrowLeft } from 'lucide-react';
 import { MultiSelect } from '@/components/ui/multi-select';
 import { PREDEFINED_SKILLS } from '@/lib/skills';
+import { PREDEFINED_CAUSES } from '@/lib/causes';
 import { SERGIPE_CITIES } from '@/lib/locations';
 
 const profileSchema = z.object({
@@ -25,6 +26,7 @@ const profileSchema = z.object({
   cpf: z.string().optional(),
   bio: z.string().optional(),
   skills: z.string().optional(),
+  interests: z.string().optional(),
   locations: z.string().optional(),
   linkedin_url: z.string().url('URL inválida').optional().or(z.literal('')),
   github_url: z.string().url('URL inválida').optional().or(z.literal('')),
@@ -52,6 +54,7 @@ export default function Profile() {
       cpf: '',
       bio: '',
       skills: '',
+      interests: '',
       locations: '',
       linkedin_url: '',
       github_url: '',
@@ -66,6 +69,7 @@ export default function Profile() {
         cpf: profile.cpf || '',
         bio: profile.bio || '',
         skills: profile.skills || '',
+        interests: profile.interests || '',
         locations: profile.locations ? profile.locations.join(',') : '',
         linkedin_url: profile.linkedin_url || '',
         github_url: profile.github_url || '',
@@ -99,7 +103,7 @@ export default function Profile() {
 
     try {
       // Generate embedding from profile text
-      const profileText = buildProfileText({ nome: data.nome, bio: data.bio, skills: data.skills });
+      const profileText = buildProfileText({ nome: data.nome, bio: data.bio, skills: data.skills, interests: data.interests });
       const embedding = await generateEmbedding(profileText);
 
       const updateData: any = {
@@ -107,6 +111,7 @@ export default function Profile() {
         cpf: data.cpf || null,
         bio: data.bio || null,
         skills: data.skills || null,
+        interests: data.interests || null,
         locations: data.locations ? data.locations.split(',').map(l => l.trim()).filter(Boolean) : null,
         linkedin_url: data.linkedin_url || null,
         github_url: data.github_url || null,
@@ -213,44 +218,65 @@ export default function Profile() {
 
               <div className="space-y-2">
                 <Label htmlFor="skills">
-                  {profile.tipo === 'ong' ? 'Áreas de atuação' : 'Habilidades'}
+                  {profile.tipo === 'ong' ? 'Áreas de Atuação / Causas' : 'Habilidades / Skills'}
                 </Label>
                 <Controller
                   name="skills"
                   control={form.control}
                   render={({ field }) => (
                     <MultiSelect
-                      options={Object.values(PREDEFINED_SKILLS)}
+                      options={profile.tipo === 'ong' ? Object.values(PREDEFINED_CAUSES) : Object.values(PREDEFINED_SKILLS)}
                       selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
                       onChange={(selected) => field.onChange(selected.join(','))}
-                      placeholder="Selecione as habilidades..."
+                      placeholder={profile.tipo === 'ong' ? "Selecione as causas..." : "Selecione as habilidades..."}
                     />
                   )}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Selecione as habilidades que você possui ou busca.
+                  {profile.tipo === 'ong' ? 'Selecione as causas que sua ONG apoia.' : 'Selecione as habilidades que você possui ou busca.'}
                 </p>
               </div>
 
               {profile.tipo === 'voluntario' && (
-                <div className="space-y-2">
-                  <Label htmlFor="locations">Onde você pode atuar?</Label>
-                  <Controller
-                    name="locations"
-                    control={form.control}
-                    render={({ field }) => (
-                      <MultiSelect
-                        options={SERGIPE_CITIES as unknown as string[]}
-                        selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
-                        onChange={(selected) => field.onChange(selected.join(','))}
-                        placeholder="Selecione as cidades..."
-                      />
-                    )}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Selecione as cidades de Sergipe onde você pode atuar como voluntário.
-                  </p>
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="interests">Áreas de Interesse</Label>
+                    <Controller
+                      name="interests"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MultiSelect
+                          options={Object.values(PREDEFINED_CAUSES)}
+                          selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                          onChange={(selected) => field.onChange(selected.join(','))}
+                          placeholder="Selecione as causas de seu interesse..."
+                        />
+                      )}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Selecione as causas e áreas que você tem interesse em apoiar como voluntário.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="locations">Onde você pode atuar?</Label>
+                    <Controller
+                      name="locations"
+                      control={form.control}
+                      render={({ field }) => (
+                        <MultiSelect
+                          options={SERGIPE_CITIES as unknown as string[]}
+                          selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
+                          onChange={(selected) => field.onChange(selected.join(','))}
+                          placeholder="Selecione as cidades..."
+                        />
+                      )}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Selecione as cidades de Sergipe onde você pode atuar como voluntário.
+                    </p>
+                  </div>
+                </>
               )}
 
               {profile.tipo === 'voluntario' && (

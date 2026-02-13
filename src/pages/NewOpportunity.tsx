@@ -19,7 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { ArrowLeft, Loader2, Check, ChevronsUpDown } from 'lucide-react';
 import { PREDEFINED_CAUSES } from '@/lib/causes';
-import { PREDEFINED_SKILLS, PREDEFINED_SOFT_SKILLS } from '@/lib/skills';
+import { PREDEFINED_SKILLS } from '@/lib/skills';
 import { SERGIPE_CITIES } from '@/lib/locations';
 import { cn } from "@/lib/utils";
 import {
@@ -87,8 +87,7 @@ const opportunitySchema = z.object({
     observacoesLogistica: z.string().optional(),
 
     // Requisitos do Perfil
-    hardSkills: z.string().optional(),
-    softSkills: z.string().optional(),
+    skills: z.string().min(1, 'Selecione pelo menos uma habilidade necessária'),
     prerequisitos: z.string().optional(),
 
     // Contrapartida e Benefícios
@@ -155,8 +154,7 @@ export default function NewOpportunity() {
             horarioTermino: '',
             duracaoCompromisso: 'curto',
             observacoesLogistica: '',
-            hardSkills: '',
-            softSkills: '',
+            skills: '',
             prerequisitos: '',
             emiteCertificado: 'nao',
             ofereceTreinamento: 'nao',
@@ -186,8 +184,7 @@ export default function NewOpportunity() {
                 horarioTermino: '',
                 duracaoCompromisso: 'curto',
                 observacoesLogistica: '',
-                hardSkills: '',
-                softSkills: '',
+                skills: '',
                 prerequisitos: '',
                 emiteCertificado: 'nao',
                 ofereceTreinamento: 'nao',
@@ -214,7 +211,7 @@ export default function NewOpportunity() {
                 form.reset({
                     titulo: data.titulo,
                     descricao: data.descricao,
-                    causas: data.causas ? data.causas.join(',') : (data.skills_required || ''),
+                    causas: data.causas ? data.causas.join(',') : '', // Causas are array in DB
                     vagas: data.min_vagas || 1,
                     formato: (data.formato as any) || 'presencial',
                     endereco: data.endereco || '',
@@ -227,8 +224,7 @@ export default function NewOpportunity() {
                     horarioTermino: '',
                     duracaoCompromisso: 'curto', // Not yet in DB
                     observacoesLogistica: '',
-                    hardSkills: '',
-                    softSkills: '',
+                    skills: data.skills_required || '',
                     prerequisitos: '',
                     emiteCertificado: data.emite_certificado ? 'sim' : 'nao',
                     ofereceTreinamento: data.oferece_treinamento ? 'sim' : 'nao',
@@ -269,16 +265,17 @@ export default function NewOpportunity() {
             const opportunityText = buildOpportunityText({
                 titulo: data.titulo,
                 descricao: data.descricao,
-                skills_required: data.causas || null,
+                skills_required: data.skills,
+                causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
             });
             const embedding = await generateEmbedding(opportunityText);
 
             const baseData: any = {
                 titulo: data.titulo,
                 descricao: data.descricao,
-                skills_required: data.causas, // Keep for backward compatibility if needed, or remove
+                skills_required: data.skills,
                 horas_estimadas: data.cargaHorariaSemanal,
-                location: data.cidade || profile?.locations?.[0] || 'Aracaju', // Keep for backward compatibility
+                location: data.cidade || profile?.locations?.[0] || 'Aracaju',
                 // New fields
                 causas: data.causas ? data.causas.split(',').map(s => s.trim()).filter(Boolean) : [],
                 min_vagas: data.vagas,
@@ -314,10 +311,20 @@ export default function NewOpportunity() {
                     ong_id: profile.id,
                     titulo: data.titulo,
                     descricao: data.descricao,
-                    skills_required: data.causas,
+                    skills_required: data.skills,
                     horas_estimadas: data.cargaHorariaSemanal,
-                    location: data.endereco || profile?.locations?.[0] || 'Aracaju',
+                    location: data.cidade || profile?.locations?.[0] || 'Aracaju',
                     ativa: true,
+                    causas: baseData.causas, // Pass the array explicitly for insert as well if needed, or rely on defaults
+                    // Ensure all other required fields are passed if they are NOT nullable in DB
+                    min_vagas: data.vagas,
+                    formato: data.formato,
+                    emite_certificado: data.emiteCertificado === 'sim',
+                    oferece_treinamento: data.ofereceTreinamento === 'sim',
+                    recursos_oferecidos: data.recursosOferecidos,
+                    endereco: data.endereco,
+                    bairro: data.bairro,
+                    cidade: data.cidade,
                 });
 
                 if (error) throw error;
@@ -796,47 +803,30 @@ export default function NewOpportunity() {
                                 <h3 className="text-lg font-semibold mb-4">Requisitos do Perfil</h3>
                             </div>
 
-                            {/* Habilidades Técnicas (Hard Skills) */}
+                            {/* Habilidades Necessárias (Skills) */}
                             <div className="space-y-2">
-                                <Label htmlFor="hardSkills">
-                                    Habilidades Técnicas (Hard Skills) <span className="text-muted-foreground text-xs">(Opcional)</span>
+                                <Label htmlFor="skills">
+                                    Habilidades Necessárias <span className="text-destructive">*</span>
                                 </Label>
                                 <Controller
-                                    name="hardSkills"
+                                    name="skills"
                                     control={form.control}
                                     render={({ field }) => (
                                         <MultiSelect
                                             options={[...PREDEFINED_SKILLS]}
                                             selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
                                             onChange={(selected) => field.onChange(selected.join(','))}
-                                            placeholder="Selecione habilidades técnicas... (Ex: Python, Excel, Design)"
+                                            placeholder="Selecione as habilidades necessárias..."
                                         />
                                     )}
                                 />
+                                {form.formState.errors.skills && (
+                                    <p className="text-sm text-destructive">
+                                        {form.formState.errors.skills.message}
+                                    </p>
+                                )}
                                 <p className="text-sm text-muted-foreground">
-                                    Selecione as habilidades técnicas necessárias para esta oportunidade
-                                </p>
-                            </div>
-
-                            {/* Habilidades Comportamentais (Soft Skills) */}
-                            <div className="space-y-2">
-                                <Label htmlFor="softSkills">
-                                    Habilidades Comportamentais (Soft Skills) <span className="text-muted-foreground text-xs">(Opcional)</span>
-                                </Label>
-                                <Controller
-                                    name="softSkills"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <MultiSelect
-                                            options={[...PREDEFINED_SOFT_SKILLS]}
-                                            selected={field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : []}
-                                            onChange={(selected) => field.onChange(selected.join(','))}
-                                            placeholder="Selecione soft skills... (Ex: Liderança, Empatia, Proatividade)"
-                                        />
-                                    )}
-                                />
-                                <p className="text-sm text-muted-foreground">
-                                    Selecione as competências comportamentais desejadas
+                                    Selecione as habilidades essenciais para o voluntário desempenhar a função
                                 </p>
                             </div>
 

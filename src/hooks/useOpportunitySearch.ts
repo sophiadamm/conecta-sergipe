@@ -49,7 +49,7 @@ export function useOpportunitySearch(filters: SearchFilters) {
       let queryBuilder = supabase
         .from('opportunities')
         .select(`
-          id, titulo, descricao, horas_estimadas, skills_required, location, created_at,
+          id, titulo, descricao, horas_estimadas, skills_required, location, created_at, causas,
           ong:profiles!opportunities_ong_id_fkey(id, nome, avatar_url)
         `)
         .eq('ativa', true)
