@@ -75,7 +75,7 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
     console.warn(`Unexpected embedding dimension: ${arr.length} (expected 384)`);
   }
 
-  return arr;
+  return arr as number[];
 }
 
 Deno.serve(async (req) => {

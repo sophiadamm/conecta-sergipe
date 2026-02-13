@@ -430,20 +430,21 @@ export default function OngDashboard() {
     try {
       // Use RPC para deletar e notificar candidatos
       const { data, error } = await supabase
-        .rpc('delete_opportunity_and_notify', {
+        .rpc('delete_opportunity_and_notify' as any, {
           p_opportunity_id: opportunityToDelete
         });
 
       if (error) throw error;
 
-      if (data && !data.success) {
-        throw new Error(data.error || 'Erro ao excluir oportunidade');
+      const result = data as any;
+      if (result && !result.success) {
+        throw new Error(result.error || 'Erro ao excluir oportunidade');
       }
 
       toast({
         title: 'Oportunidade excluída',
-        description: data?.notifications_sent
-          ? `A oportunidade foi removida e ${data.notifications_sent} candidato(s) foram notificados.`
+        description: result?.notifications_sent
+          ? `A oportunidade foi removida e ${result.notifications_sent} candidato(s) foram notificados.`
           : 'A oportunidade foi removida com sucesso.',
       });
 
