@@ -39,17 +39,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- PARTE 3: Trigger para detectar UPDATE em opportunities
 DROP TRIGGER IF EXISTS trigger_notify_opportunity_updated ON public.opportunities;
+
+-- Cria trigger que dispara em QUALQUER mudança de campo relevante
 CREATE TRIGGER trigger_notify_opportunity_updated
   AFTER UPDATE ON public.opportunities
   FOR EACH ROW
   WHEN (
-    -- Só dispara se campos importantes mudaram (não dispara para updated_at)
-    OLD.titulo IS DISTINCT FROM NEW.titulo OR
-    OLD.descricao IS DISTINCT FROM NEW.descricao OR
-    OLD.skills_required IS DISTINCT FROM NEW.skills_required OR
-    OLD.horas_estimadas IS DISTINCT FROM NEW.horas_estimadas OR
-    OLD.location IS DISTINCT FROM NEW.location OR
-    OLD.ativa IS DISTINCT FROM NEW.ativa
+    -- Abordagem Definitiva: Converte para JSONB e remove a chave 'updated_at' antes de comparar
+    -- Isso funciona para QUAISQUER colunas, atuais ou futuras, sem precisar listar nomes.
+    (to_jsonb(OLD) - 'updated_at') IS DISTINCT FROM (to_jsonb(NEW) - 'updated_at')
   )
   EXECUTE FUNCTION public.notify_opportunity_updated();
 

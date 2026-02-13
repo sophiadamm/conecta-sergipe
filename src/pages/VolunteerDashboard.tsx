@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { generateEmbedding, buildProfileText } from '@/lib/embeddings';
@@ -35,6 +35,7 @@ import {
   Trash2,
   Award,
   Download,
+  ExternalLink,
 } from 'lucide-react';
 
 import { ReviewCard } from '@/components/profile/ReviewCard';
@@ -653,7 +654,7 @@ export default function VolunteerDashboard() {
                           {match.opportunity.descricao}
                         </p>
                       </CardContent>
-                      {(match.status === 'concluido' || match.status === 'pendente') && (
+                      {(match.status === 'concluido' || match.status === 'pendente' || match.status === 'aprovado') && (
                         <CardFooter className="border-t pt-4 flex-col gap-3">
                           {match.status === 'concluido' && (
                             <>
@@ -740,16 +741,32 @@ export default function VolunteerDashboard() {
                             </>
                           )}
 
-                          {match.status === 'pendente' && (
-                            <div className="flex w-full justify-end">
+                          {/* Botões de ação para status pendente e aprovado */}
+                          {(match.status === 'pendente' || match.status === 'aprovado') && (
+                            <div className="flex w-full justify-end gap-3">
+                              {/* Botão Ver Detalhes - Navegação Interna */}
                               <Button
                                 variant="outline"
-                                className="gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
-                                onClick={() => handleCancelApplication(match.id)}
+                                className="gap-2"
+                                asChild
                               >
-                                <Trash2 className="h-4 w-4" />
-                                Cancelar Candidatura
+                                <Link to={`/vaga/${match.opportunity.id}`}>
+                                  <ExternalLink className="h-4 w-4" />
+                                  Ver Detalhes
+                                </Link>
                               </Button>
+
+                              {/* Botão Cancelar (apenas para pendente) */}
+                              {match.status === 'pendente' && (
+                                <Button
+                                  variant="outline"
+                                  className="gap-2 text-destructive border-destructive/50 hover:bg-destructive/10"
+                                  onClick={() => handleCancelApplication(match.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Cancelar Candidatura
+                                </Button>
+                              )}
                             </div>
                           )}
                         </CardFooter>
