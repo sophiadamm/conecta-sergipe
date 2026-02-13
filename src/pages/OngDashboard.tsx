@@ -292,7 +292,7 @@ export default function OngDashboard() {
       // Processar cada oportunidade
       for (let i = 0; i < opportunitiesWithoutEmbedding.length; i++) {
         const opp = opportunitiesWithoutEmbedding[i];
-        
+
         try {
           // Gerar embedding
           const opportunityText = buildOpportunityText({
@@ -428,16 +428,23 @@ export default function OngDashboard() {
     if (!opportunityToDelete) return;
 
     try {
-      const { error } = await supabase
-        .from('opportunities')
-        .delete()
-        .eq('id', opportunityToDelete);
+      // Use RPC para deletar e notificar candidatos
+      const { data, error } = await supabase
+        .rpc('delete_opportunity_and_notify', {
+          p_opportunity_id: opportunityToDelete
+        });
 
       if (error) throw error;
 
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erro ao excluir oportunidade');
+      }
+
       toast({
         title: 'Oportunidade excluída',
-        description: 'A oportunidade foi removida com sucesso.',
+        description: data?.notifications_sent
+          ? `A oportunidade foi removida e ${data.notifications_sent} candidato(s) foram notificados.`
+          : 'A oportunidade foi removida com sucesso.',
       });
 
       loadData();
@@ -445,6 +452,7 @@ export default function OngDashboard() {
       console.error('Error deleting opportunity:', error);
       toast({
         title: 'Erro ao excluir',
+        description: error instanceof Error ? error.message : 'Tente novamente.',
         variant: 'destructive',
       });
     } finally {

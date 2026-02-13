@@ -32,6 +32,10 @@ export function NotificationBell() {
             case 'volunteer_reviewed':
             case 'ong_reviewed':
                 return '⭐';
+            case 'opportunity_updated':
+                return '✏️';
+            case 'opportunity_deleted':
+                return '⚠️';
             default:
                 return '🔔';
         }
