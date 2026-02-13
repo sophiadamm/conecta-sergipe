@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadMessages } from '@/hooks/useUnreadMessages';
-import { DummyDataGenerator } from '@/components/DummyDataGenerator';
 import { NotificationBell } from '@/components/NotificationBell';
 import { Heart, LogOut, User, LayoutDashboard, Search, MessageCircle } from 'lucide-react';
 
@@ -57,8 +56,6 @@ export function Header() {
               </Link>
             </Button>
           )}
-
-          <DummyDataGenerator />
 
           {user && <NotificationBell />}
 

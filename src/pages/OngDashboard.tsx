@@ -571,7 +571,8 @@ export default function OngDashboard() {
           </TabsList>
 
           <TabsContent value="opportunities" className="space-y-4">
-            {opportunities.length > 0 && (
+            {/* OPTIMIZATION SECTION - HIDDEN FOR PRODUCTION */}
+            {false && opportunities.length > 0 && (
               <Card className="p-4">
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-center">
