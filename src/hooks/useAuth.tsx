@@ -7,6 +7,7 @@ interface Profile {
   user_id: string;
   nome: string;
   cpf: string | null;
+  cnpj: string | null;
   tipo: 'voluntario' | 'ong';
   bio: string | null;
   skills: string | null;
@@ -107,11 +108,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (data.user) {
-      // Create profile
-      const { error: profileError } = await supabase.from('profiles').insert({
+      // Create or update profile (upsert to avoid 409 conflict)
+      const { error: profileError } = await supabase.from('profiles').upsert({
         user_id: data.user.id,
         nome: profileData.nome || '',
         cpf: profileData.cpf || null,
+        cnpj: profileData.cnpj || null,
         tipo: profileData.tipo || 'voluntario',
         bio: profileData.bio || null,
         skills: profileData.skills || null,
@@ -119,6 +121,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         locations: profileData.locations || null,
         linkedin_url: profileData.linkedin_url || null,
         github_url: profileData.github_url || null,
+      }, {
+        onConflict: 'user_id'
       });
 
       if (profileError) {

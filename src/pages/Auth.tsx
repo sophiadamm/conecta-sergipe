@@ -5,6 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/hooks/useAuth';
 import { validateCPF, formatCPF } from '@/lib/cpf';
+import { validateCNPJ, formatCNPJ } from '@/lib/cnpj';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,7 @@ const signupSchema = z.object({
   confirmPassword: z.string(),
   nome: z.string().min(2, 'Nome deve ter no mínimo 2 caracteres'),
   cpf: z.string().optional(),
+  cnpj: z.string().optional(),
   tipo: z.enum(['voluntario', 'ong']),
   bio: z.string().optional(),
   skills: z.string().optional(),
@@ -44,6 +46,16 @@ const signupSchema = z.object({
       message: 'Senhas não conferem',
       path: ['confirmPassword'],
     });
+  }
+
+  if (data.tipo === 'ong') {
+    if (data.cnpj && !validateCNPJ(data.cnpj)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'CNPJ inválido',
+        path: ['cnpj'],
+      });
+    }
   }
 
   if (data.tipo === 'voluntario') {
@@ -97,6 +109,7 @@ export default function Auth() {
       confirmPassword: '',
       nome: '',
       cpf: '',
+      cnpj: '',
       tipo: 'voluntario',
       bio: '',
       skills: '',
@@ -113,12 +126,11 @@ export default function Auth() {
     if (user && !authLoading) {
       if (profile) {
         navigate('/dashboard');
-      } else {
-        // User exists but no profile — sign out to clear orphan session
-        signOut();
       }
+      // Removed automatic signOut - give time for profile creation
+      // If profile doesn't exist after signup, it will be handled by the signup error flow
     }
-  }, [user, profile, authLoading, navigate, signOut]);
+  }, [user, profile, authLoading, navigate]);
 
   const handleLogin = async (data: LoginFormData) => {
     setError(null);
@@ -143,7 +155,8 @@ export default function Auth() {
     try {
       const { error } = await signUp(data.email, data.password, {
         nome: data.nome,
-        cpf: data.cpf ? formatCPF(data.cpf) : null,
+        cpf: data.cpf ? data.cpf.replace(/\D/g, '') : null,
+        cnpj: data.cnpj ? data.cnpj.replace(/\D/g, '') : null,
         tipo: data.tipo,
         bio: data.bio || null,
         skills: data.skills || null,
@@ -155,10 +168,19 @@ export default function Auth() {
 
       if (error) {
         if (error.message.includes('already registered')) {
-          setError('Este email já está cadastrado.');
+          // If user is already registered but has an active session, redirect to dashboard
+          if (user) {
+            navigate('/dashboard');
+            return;
+          }
+          setError('Este email já está cadastrado. Faça login para continuar.');
         } else {
           setError(error.message);
         }
+      } else {
+        // Success - navigate to dashboard explicitly
+        // The useEffect will also handle this, but we do it here for immediate feedback
+        navigate('/dashboard');
       }
     } catch (err) {
       setError('Erro ao criar conta. Tente novamente.');
@@ -310,6 +332,22 @@ export default function Auth() {
                     {signupForm.formState.errors.cpf && (
                       <p className="text-sm text-destructive">
                         {signupForm.formState.errors.cpf.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {userType === 'ong' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="cnpj">CNPJ</Label>
+                    <Input
+                      id="cnpj"
+                      placeholder="00.000.000/0000-00"
+                      {...signupForm.register('cnpj')}
+                    />
+                    {signupForm.formState.errors.cnpj && (
+                      <p className="text-sm text-destructive">
+                        {signupForm.formState.errors.cnpj.message}
                       </p>
                     )}
                   </div>
