@@ -15,6 +15,7 @@ export const PREDEFINED_SKILLS = [
     // Mão na Massa & Logística
     "Culinária", "Motorista (CNH B)", "Pintura", "Carpintaria",
     "Limpeza e Organização", "Logística", "Jardinagem", "Costura",
+    "Cuidador de Animais", "Agricultura",
 
     // Administrativo & Jurídico
     "Gestão de Projetos", "Contabilidade", "Direito/Jurídico",
