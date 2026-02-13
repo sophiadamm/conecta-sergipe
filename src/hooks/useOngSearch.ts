@@ -7,13 +7,13 @@ export interface OngSearchResult {
     bio: string | null;
     avatar_url: string | null;
     locations: string[] | null;
-    skills: string | null;
+    skills: string[] | null; // Updated to array assuming .contains usage implies array column
 }
 
 export interface SearchFilters {
     query: string;
     location?: string[];
-    category?: string;
+    causes?: string[];
 }
 
 export function useOngSearch(filters: SearchFilters) {
@@ -40,9 +40,10 @@ export function useOngSearch(filters: SearchFilters) {
                 );
             }
 
-            // Apply category/skills filter
-            if (filters.category && filters.category !== 'all') {
-                query = query.ilike('skills', `%${filters.category}%`);
+            // Apply category/skills filter (area of activity)
+            if (filters.causes && filters.causes.length > 0) {
+                // Using .contains as requested for tags
+                query = query.contains('skills', filters.causes);
             }
 
             const { data, error } = await query.limit(50);

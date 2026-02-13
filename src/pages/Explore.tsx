@@ -50,6 +50,7 @@ export default function Explore() {
   const { data: ongs, isLoading: loadingOngs, error: errorOngs } = useOngSearch({
     query: debouncedFiltersQuery,
     location: filters.location,
+    causes: filters.causas,
   });
 
   function handleFiltersChange(next: Partial<typeof filters> & { query: string; skills: string[]; minHours: number; maxHours: number; location: string[] }) {
@@ -93,6 +94,7 @@ export default function Explore() {
         {/* On mobile show filters above results; on desktop show them in left column */}
         <div className="mb-6 block md:hidden">
           <ExploreFilters
+            activeTab={searchType}
             value={{
               query: filters.query ?? '',
               skills: filters.skills ?? [],
@@ -113,6 +115,7 @@ export default function Explore() {
           <div className="hidden md:block">
             {searchType === 'vagas' ? (
               <ExploreFilters
+                activeTab="vagas"
                 value={{
                   query: filters.query ?? '',
                   skills: filters.skills ?? [],
@@ -129,6 +132,7 @@ export default function Explore() {
               />
             ) : (
               <ExploreFilters
+                activeTab="ongs"
                 value={{
                   query: filters.query ?? '',
                   skills: filters.skills ?? [],

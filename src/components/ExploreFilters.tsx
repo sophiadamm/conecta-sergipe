@@ -12,7 +12,9 @@ import { SERGIPE_CITIES } from '@/lib/locations';
 import { Search, X, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
+
 type Props = {
+  activeTab?: 'vagas' | 'ongs';
   value: {
     query: string;
     skills: string[];
@@ -28,7 +30,7 @@ type Props = {
   onChange: (next: Props['value']) => void;
 };
 
-export default function ExploreFilters({ value, onChange }: Props) {
+export default function ExploreFilters({ value, onChange, activeTab = 'vagas' }: Props) {
   const [query, setQuery] = useState(value.query || '');
   const [skills, setSkills] = useState<string[]>(value.skills || []);
   const [minHours, setMinHours] = useState(value.minHours ?? 0);
@@ -39,6 +41,8 @@ export default function ExploreFilters({ value, onChange }: Props) {
   const [formato, setFormato] = useState<'presencial' | 'remoto' | 'hibrido' | null>(value.formato ?? null);
   const [emiteCertificado, setEmiteCertificado] = useState<'sim' | 'nao' | null>(value.emiteCertificado ?? null);
   const [ofereceTreinamento, setOfereceTreinamento] = useState<'sim' | 'nao' | null>(value.ofereceTreinamento ?? null);
+
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   // Sync internal state with props when props change (e.g. initial load or clear from parent)
   useEffect(() => {
@@ -123,12 +127,12 @@ export default function ExploreFilters({ value, onChange }: Props) {
   ].reduce((a, b) => a + b, 0);
 
   return (
-    <Card className="sticky top-4">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between text-lg">
+    <Card className="flex flex-col h-auto md:sticky md:top-20 md:h-[calc(100vh-120px)] border-none shadow-none md:border md:shadow-sm">
+      <CardHeader className="pb-4 shrink-0">
+        <CardTitle className="flex items-center justify-between text-lg mb-4">
           <div className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filtros
+            {activeTab === 'ongs' ? 'Filtrar ONGs' : 'Filtrar Vagas'}
             {activeFiltersCount > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {activeFiltersCount}
@@ -136,16 +140,37 @@ export default function ExploreFilters({ value, onChange }: Props) {
             )}
           </div>
         </CardTitle>
+
+        {/* Action Buttons - Moved to top */}
+        <div className="flex gap-2 w-full">
+          <Button
+            className="flex-1 gap-2"
+            onClick={handleSearch}
+          >
+            <Search className="h-4 w-4" />
+            {activeTab === 'ongs' ? 'Buscar ONGs' : 'Filtrar'}
+          </Button>
+          {hasFilters && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleClearFilters}
+              title="Limpar filtros"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 overflow-y-auto flex-1 pr-4 custom-scrollbar">
         {/* Text Search */}
         <div className="space-y-2">
-          <Label htmlFor="search-query">Buscar</Label>
+          <Label htmlFor="search-query">{activeTab === 'ongs' ? 'Nome da ONG' : 'Buscar por termo'}</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               id="search-query"
-              placeholder="Ex: alfabetização, educação..."
+              placeholder={activeTab === 'ongs' ? "Ex: Instituição..." : "Ex: alfabetização, música..."}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-9"
@@ -153,35 +178,7 @@ export default function ExploreFilters({ value, onChange }: Props) {
           </div>
         </div>
 
-        {/* Causas/Área de Atuação Multi-Select */}
-        <div className="space-y-2">
-          <Label htmlFor="causas-filter">Causa/Área de Atuação</Label>
-          <MultiSelect
-            options={PREDEFINED_CAUSES as unknown as string[]}
-            selected={causas}
-            onChange={setCausas}
-            placeholder="Selecione causas..."
-          />
-          <p className="text-xs text-muted-foreground">
-            Selecione uma ou mais áreas
-          </p>
-        </div>
-
-        {/* Skills Multi-Select */}
-        <div className="space-y-2">
-          <Label htmlFor="skills-filter">Habilidades</Label>
-          <MultiSelect
-            options={PREDEFINED_SKILLS as unknown as string[]}
-            selected={skills}
-            onChange={setSkills}
-            placeholder="Selecione habilidades..."
-          />
-          <p className="text-xs text-muted-foreground">
-            Selecione uma ou mais habilidades
-          </p>
-        </div>
-
-        {/* Location Filter */}
+        {/* Location Filter - Always Visible */}
         <div className="space-y-2">
           <Label htmlFor="location-filter">Localização</Label>
           <MultiSelect
@@ -190,178 +187,199 @@ export default function ExploreFilters({ value, onChange }: Props) {
             onChange={setLocation}
             placeholder="Selecione cidades..."
           />
-          <p className="text-xs text-muted-foreground">
-            Selecione uma ou mais cidades
-          </p>
         </div>
 
-        {/* Minimum Vagas */}
+        {/* Causas/Área de Atuação - Always Visible */}
         <div className="space-y-2">
-          <Label htmlFor="min-vagas">Mínimo de vagas disponíveis</Label>
-          <Input
-            id="min-vagas"
-            type="number"
-            min={1}
-            value={minVagas ?? ''}
-            onChange={(e) => setMinVagas(e.target.value === '' ? undefined : Math.max(1, Number(e.target.value)))}
-            placeholder="Ex: 2"
+          <Label htmlFor="causas-filter">Causa/Área de Atuação</Label>
+          <MultiSelect
+            options={PREDEFINED_CAUSES as unknown as string[]}
+            selected={causas}
+            onChange={setCausas}
+            placeholder="Selecione causas..."
           />
         </div>
 
-        {/* Formato Filter */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Formato</Label>
-            {formato && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setFormato(null)}
-                className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Limpar
-              </Button>
-            )}
-          </div>
-          <RadioGroup value={formato ?? ''} onValueChange={(val) => setFormato(val as any || null)}>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${formato === 'presencial' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="presencial" id="formato-presencial" />
-              <Label htmlFor="formato-presencial" className="font-normal cursor-pointer flex-1">
-                Presencial
-              </Label>
+        {/* Vagas-specific filters */}
+        {activeTab === 'vagas' && (
+          <>
+            {/* Skills Multi-Select */}
+            <div className="space-y-2">
+              <Label htmlFor="skills-filter">Habilidades</Label>
+              <MultiSelect
+                options={PREDEFINED_SKILLS as unknown as string[]}
+                selected={skills}
+                onChange={setSkills}
+                placeholder="Selecione habilidades..."
+              />
             </div>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${formato === 'remoto' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="remoto" id="formato-remoto" />
-              <Label htmlFor="formato-remoto" className="font-normal cursor-pointer flex-1">
-                Remoto
-              </Label>
-            </div>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${formato === 'hibrido' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="hibrido" id="formato-hibrido" />
-              <Label htmlFor="formato-hibrido" className="font-normal cursor-pointer flex-1">
-                Híbrido
-              </Label>
-            </div>
-          </RadioGroup>
-        </div>
 
-        {/* Emite Certificado */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Emite Certificado?</Label>
-            {emiteCertificado && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setEmiteCertificado(null)}
-                className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Limpar
-              </Button>
-            )}
-          </div>
-          <RadioGroup value={emiteCertificado ?? ''} onValueChange={(val) => setEmiteCertificado(val as any || null)}>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${emiteCertificado === 'sim' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="sim" id="cert-sim" />
-              <Label htmlFor="cert-sim" className="font-normal cursor-pointer flex-1">
-                Sim
-              </Label>
-            </div>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${emiteCertificado === 'nao' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="nao" id="cert-nao" />
-              <Label htmlFor="cert-nao" className="font-normal cursor-pointer flex-1">
-                Não
-              </Label>
-            </div>
-          </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            Padrão: Indiferente
-          </p>
-        </div>
-
-        {/* Oferece Treinamento */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label>Oferece Treinamento?</Label>
-            {ofereceTreinamento && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setOfereceTreinamento(null)}
-                className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              >
-                Limpar
-              </Button>
-            )}
-          </div>
-          <RadioGroup value={ofereceTreinamento ?? ''} onValueChange={(val) => setOfereceTreinamento(val as any || null)}>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${ofereceTreinamento === 'sim' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="sim" id="trein-sim" />
-              <Label htmlFor="trein-sim" className="font-normal cursor-pointer flex-1">
-                Sim
-              </Label>
-            </div>
-            <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${ofereceTreinamento === 'nao' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
-              <RadioGroupItem value="nao" id="trein-nao" />
-              <Label htmlFor="trein-nao" className="font-normal cursor-pointer flex-1">
-                Não
-              </Label>
-            </div>
-          </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            Padrão: Indiferente
-          </p>
-        </div>
-
-        {/* Hours Range */}
-        <div className="space-y-2">
-          <Label>Horas estimadas</Label>
-          <div className="flex items-center gap-3">
-            <Input
-              type="number"
-              min={0}
-              max={80}
-              className="w-20"
-              value={minHours === 0 ? '' : minHours}
-              onChange={(e) => setMinHours(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
-              placeholder="0"
-              aria-label="Horas mínimas"
-            />
-            <span className="text-sm text-muted-foreground">até</span>
-            <Input
-              type="number"
-              min={0}
-              max={80}
-              className="w-20"
-              value={maxHours === 40 ? '' : maxHours}
-              onChange={(e) => setMaxHours(e.target.value === '' ? 40 : Math.max(0, Number(e.target.value)))}
-              placeholder="40"
-              aria-label="Horas máximas"
-            />
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex gap-2 pt-2">
-          {hasFilters && (
+            {/* Toggle Advanced Search */}
             <Button
-              variant="outline"
-              className="flex-1 gap-2"
-              onClick={handleClearFilters}
+              variant="ghost"
+              className="w-full flex items-center justify-between px-0 hover:bg-transparent text-primary"
+              onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
             >
-              <X className="h-4 w-4" />
-              Limpar
+              <span className="text-sm font-medium">
+                {isAdvancedOpen ? 'Menos filtros' : 'Busca avançada'}
+              </span>
+              <Filter className={`h-3 w-3 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
             </Button>
-          )}
-          <Button
-            className="flex-1 gap-2"
-            onClick={handleSearch}
-          >
-            <Search className="h-4 w-4" />
-            Buscar
-          </Button>
-        </div>
+
+            {/* Advanced Filters */}
+            {isAdvancedOpen && (
+              <div className="space-y-6 pt-2 animate-in fade-in slide-in-from-top-2">
+
+                {/* Minimum Vagas */}
+                <div className="space-y-2">
+                  <Label htmlFor="min-vagas">Mínimo de vagas disponíveis</Label>
+                  <Input
+                    id="min-vagas"
+                    type="number"
+                    min={1}
+                    value={minVagas ?? ''}
+                    onChange={(e) => setMinVagas(e.target.value === '' ? undefined : Math.max(1, Number(e.target.value)))}
+                    placeholder="Ex: 2"
+                  />
+                </div>
+
+                {/* Formato Filter */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Formato</Label>
+                    {formato && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFormato(null)}
+                        className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+                  <RadioGroup value={formato ?? ''} onValueChange={(val) => setFormato(val as any || null)}>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${formato === 'presencial' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="presencial" id="formato-presencial" />
+                      <Label htmlFor="formato-presencial" className="font-normal cursor-pointer flex-1">
+                        Presencial
+                      </Label>
+                    </div>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${formato === 'remoto' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="remoto" id="formato-remoto" />
+                      <Label htmlFor="formato-remoto" className="font-normal cursor-pointer flex-1">
+                        Remoto
+                      </Label>
+                    </div>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${formato === 'hibrido' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="hibrido" id="formato-hibrido" />
+                      <Label htmlFor="formato-hibrido" className="font-normal cursor-pointer flex-1">
+                        Híbrido
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {/* Emite Certificado */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Emite Certificado?</Label>
+                    {emiteCertificado && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEmiteCertificado(null)}
+                        className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+                  <RadioGroup value={emiteCertificado ?? ''} onValueChange={(val) => setEmiteCertificado(val as any || null)}>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${emiteCertificado === 'sim' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="sim" id="cert-sim" />
+                      <Label htmlFor="cert-sim" className="font-normal cursor-pointer flex-1">
+                        Sim
+                      </Label>
+                    </div>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${emiteCertificado === 'nao' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="nao" id="cert-nao" />
+                      <Label htmlFor="cert-nao" className="font-normal cursor-pointer flex-1">
+                        Não
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground">
+                    Padrão: Indiferente
+                  </p>
+                </div>
+
+                {/* Oferece Treinamento */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Oferece Treinamento?</Label>
+                    {ofereceTreinamento && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setOfereceTreinamento(null)}
+                        className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        Limpar
+                      </Button>
+                    )}
+                  </div>
+                  <RadioGroup value={ofereceTreinamento ?? ''} onValueChange={(val) => setOfereceTreinamento(val as any || null)}>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${ofereceTreinamento === 'sim' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="sim" id="trein-sim" />
+                      <Label htmlFor="trein-sim" className="font-normal cursor-pointer flex-1">
+                        Sim
+                      </Label>
+                    </div>
+                    <div className={`flex items-center space-x-2 p-2 rounded-md border transition-colors ${ofereceTreinamento === 'nao' ? 'border-primary bg-primary/5' : 'border-transparent'}`}>
+                      <RadioGroupItem value="nao" id="trein-nao" />
+                      <Label htmlFor="trein-nao" className="font-normal cursor-pointer flex-1">
+                        Não
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  <p className="text-xs text-muted-foreground">
+                    Padrão: Indiferente
+                  </p>
+                </div>
+
+                {/* Hours Range */}
+                <div className="space-y-2">
+                  <Label>Horas estimadas</Label>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={80}
+                      className="w-20"
+                      value={minHours === 0 ? '' : minHours}
+                      onChange={(e) => setMinHours(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value)))}
+                      placeholder="0"
+                      aria-label="Horas mínimas"
+                    />
+                    <span className="text-sm text-muted-foreground">até</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={80}
+                      className="w-20"
+                      value={maxHours === 40 ? '' : maxHours}
+                      onChange={(e) => setMaxHours(e.target.value === '' ? 40 : Math.max(0, Number(e.target.value)))}
+                      placeholder="40"
+                      aria-label="Horas máximas"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
-    </Card>
+    </Card >
   );
 }
