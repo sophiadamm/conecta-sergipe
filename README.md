@@ -37,5 +37,5 @@ O algoritmo prioriza conexões de alta qualidade através de um sistema de bônu
 | Camada | Tecnologias |
 | :--- | :--- |
 | **Frontend** | React, TypeScript, Vite, Tailwind CSS, Shadcn UI |
-| **Backend as a Service** | Supabase (Authentication, Database, Edge Functions) |
+| **Backend as a Service** | Supabase (Authentication, Database) |
 | **AI & Data** | Supabase Vector (pgvector) para embeddings e busca semântica |
