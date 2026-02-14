@@ -95,14 +95,14 @@ BEGIN
     END) AS skills_bonus,
     
     -- Interests bonus calculation
-    -- Rule: +0.1 per match, -0.1 if 0 matches
+    -- Rule: +0.1 per match, -0.2 if 0 matches
     (CASE
       WHEN v_interests IS NOT NULL AND opp.causas IS NOT NULL THEN
         (
           SELECT
             CASE
               WHEN match_count > 0 THEN match_count::double precision * 0.1
-              ELSE -0.1::double precision
+              ELSE -0.2::double precision
             END
           FROM (
             SELECT COUNT(*) as match_count
@@ -129,7 +129,7 @@ BEGIN
               SELECT
                 CASE
                   WHEN match_count > 0 THEN match_count::double precision * 0.1
-                  ELSE -0.1::double precision
+                  ELSE -0.2::double precision
                 END
               FROM (
                 SELECT COUNT(*) as match_count
@@ -151,7 +151,7 @@ BEGIN
               SELECT
                 CASE
                   WHEN match_count > 0 THEN match_count::double precision * 0.1
-                  ELSE -0.1::double precision
+                  ELSE -0.2::double precision
                 END
               FROM (
                 SELECT COUNT(*) as match_count
@@ -190,7 +190,7 @@ $$;
 COMMENT ON FUNCTION public.match_opportunities(uuid, vector(384), int) IS 
 'Enhanced matching function with adjusted weights:
 - Semantic similarity (vector embedding) - base score 0-1
-- Skills match: +0.1 per match, -0.1 penalty if 0 matches
-- Interests match: +0.1 per match, -0.1 penalty if 0 matches
+- Skills match: +0.1 per match, -0.2 penalty if 0 matches
+- Interests match: +0.1 per match, -0.2 penalty if 0 matches
 - Hard location filter: only returns opportunities in user''s locations
 - Final score clamped to 0.0-1.0 range';
